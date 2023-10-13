@@ -1,0 +1,837 @@
+\documentclass{beamer}
+\usepackage{alltt}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{trees}
+\usepackage{cancel}
+\usepackage{subcaption}
+\PassOptionsToPackage{obeyspaces}{url}
+\usepackage{hyperref}
+
+\usepackage{lipsum}
+
+\usetheme{Singapore}
+\definecolor{violet}{RGB}{205,99,170}
+\setbeamercolor{title}{fg=violet}
+\setbeamercolor{frametitle}{fg=violet}
+\setbeamercolor{structure}{fg=violet}
+
+\newcommand{\racket}{\texttt{Racket}}
+\newcommand{\drr}{\texttt{DrRacket}}
+\newcommand{\fsm}{\texttt{FSM}}
+\newcommand{\ide}{\texttt{IDE}}
+\newcommand{\api}{\texttt{API}}
+\newcommand{\arrow}{\(\rightarrow\)}
+\newcommand{\dotss}{\(\ldots\)}
+\newcommand{\vdotss}{\(\vdots\)}
+\newcommand{\elist}{\texttt{\textquotesingle{()}}}
+\newcommand{\logand}{\texttt{\(\wedge\)}}
+\newcommand{\logor}{\texttt{\(\vee\)}}
+\newcommand{\imp}{\texttt{\(\Rightarrow\)}}
+\newcommand{\sig}{\texttt{\(\Sigma\)}}
+\newcommand{\delt}{\texttt{\(\delta\)}}
+\newcommand{\sigsig}{\texttt{\(\Sigma\) = \{a b\}}}
+\newcommand{\gam}{\texttt{\(\Gamma\)}}
+\newcommand{\ep}{\texttt{\(\epsilon\)}}
+\newcommand{\quot}{\texttt{\textquotesingle{}}}
+\newcommand{\dquot}{\texttt{"}}
+\newcommand{\qquot}{\texttt{\textasciigrave{}}}
+\newcommand{\lambexpr}{\texttt{$\lambda$}-expression}
+\newcommand{\lamb}{\texttt{$\lambda$}}
+\newcommand{\is}{\texttt{::=}}
+\newcommand{\dfa}{\texttt{dfa}}
+\newcommand{\ndfa}{\texttt{ndfa}}
+
+
+
+\begin{document}
+
+\title{Visualizing a Nondeterministic to Deterministic Finite-State Machine Transformation}
+%\subtitle{Using Beamer}
+\author{Marco T. Moraz\'{a}n and \emph{Tijana Minic}}
+\institute{Seton Hall University}
+\date{}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}[fragile]
+\frametitle{Introduction}
+\begin{scriptsize}
+\begin{itemize}
+\item<1-> \texttt{FLAT} courses emphasize constructive proofs
+
+\item<1-> Establish the equivalence of different computation models
+
+\item<1-> Our focus today: an \ndfa{} to \dfa{} transformation
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Introduction}
+\begin{scriptsize}
+\begin{itemize}
+\item<1-> Why do students find this transformation difficult to understand?
+
+\item<2-> The \dfa{} simulates all paths in the \ndfa{}
+
+\begin{itemize}
+\scriptsize
+\item[\arrow] A path in the constructed \dfa{} may represent multiple paths in the \ndfa{}
+
+\item[\arrow]  A \dfa{} state may represent a subset of states in the \texttt{ndfa}
+
+\item[\arrow] A \dfa{} edge may represent multiple \ndfa{} edges
+
+\end{itemize}
+
+\item<3-> Our tool: visualize addition of \texttt{dfa}-edges while simultaneously visualizing corresponding \texttt{ndfa}-edges
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\section{A Brief Introduction to \fsm}
+\subsection{Core Definitions}
+
+\begin{frame}[fragile]
+\frametitle{A Brief Introduction to \fsm}
+%\framesubtitle{Core Definitions}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> Machine constructors:
+\begin{alltt}
+      make-dfa: K \sig{} s F \delt{} [\quot{}no-dead] \arrow{} dfa
+     make-ndfa: K \sig{} s F \delt{}            \arrow{} ndfa
+
+     K: list of states
+     \sig{}: list of alphabet symbols
+     s: start  state in K
+     F: list of final states in K
+     \delt{}: transition relation
+\end{alltt}
+
+\item<2-> Observers:
+\begin{alltt}
+     (sm-states M) \arrow{} K
+     (sm-sigma M)  \arrow{} \sig
+     (sm-start M)  \arrow{} s
+     (sm-finals M) \arrow{} F
+     (sm-rules M)  \arrow{} \delt{}
+     (sm-graph M)  \arrow image
+\end{alltt}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\subsection{Illustrative Example}
+
+\begin{frame}[fragile]
+\frametitle{A Brief Introduction to \fsm}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> To illustrate programming in \fsm{}, consider the following example:
+\begin{alltt}
+;; L(LNDFA) = {\(\epsilon\)} \(\cup\) aa\(\sp{\texttt{*}}\) \(\cup\) ab\(\sp{\texttt{*}}\)
+(define LNDFA (make-ndfa \quot{}(S A B F)
+                         \quot{}(a b)
+                         \quot{}S
+                         \quot{}(A B F)
+                         \qquot{}((S a A) (S a B)
+                           (S ,EMP F) (A b A)
+                           (B a B))))
+\end{alltt}
+
+\item<2-> \texttt{(sm-graph LNDFA)}
+\begin{center}
+\includegraphics[scale=0.37]{aa-ab-ndfa-graph.png}
+\end{center}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Related Work}
+\begin{scriptsize}
+\begin{itemize}
+\item<1-> Most textbooks use the following \ndfa{}\arrow\dfa{} transformation:
+
+\item<2-> \texttt{N = (make-ndfa K \sig{} s F \delt{})} \arrow \texttt{  D = (make-dfa K$^{\prime}$ \sig{}$^{\prime}$ s$^{\prime}$ F$^{\prime}$ \delt{}$^{\prime}$)}
+
+\item<3-> \texttt{D} is constructed as follows in many textbooks:
+\begin{description}
+  \item [K$^{\prime}$ = ] 2$^K$
+  \item[\sig{}$^{\prime}$ =] \sig{}
+  \item[s$^{\prime}$ =] E(s)
+  \item[F$^{\prime}$ =] \{B $|$ B$\subseteq$K$^{\prime}$ $\wedge$ B$\cap$F$\neq \emptyset$\}
+  \item[\delt{}$^{\prime}$ =] \{(Q y $\bigcup$E(p)) $|$ p$\in$K $\wedge$ (q y p)$\in$\delt{} $\wedge$ Q$\in$K$^{\prime} \wedge$ q$\in$Q\} \newline
+\end{description}
+
+\item<3-> \texttt{E(s)} = all states reachable from \texttt{s} by empty transitions
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\section{Related Work}
+
+\begin{frame}[fragile]
+\frametitle{Related Work}
+\begin{large}
+\begin{itemize}
+\item<1-> JFLAP visualization tool demonstration
+
+\begin{itemize}
+
+\item[\arrow] OpenFLAP is a similar tool with less functionalities, but the haphazard transition diagrams persist as the main problem.
+
+\end{itemize}
+
+\end{itemize}
+\end{large}
+\end{frame}
+
+
+
+
+\section{The Transformation in \fsm}
+\subsection{Design Idea}
+
+
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Design Idea}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1->  \texttt{N = (make-ndfa S \sig{} s F \delt)}
+
+\item<1->
+
+Construction of the \texttt{dfa} in most textbooks:
+\begin{description}
+  \item [K$^{\prime}$ = ] 2$^K$
+  \item[\sig{}$^{\prime}$ =] \sig{}
+  \item[s$^{\prime}$ =] E(s)
+  \item[F$^{\prime}$ =] \{B $|$ B$\subseteq$K$^{\prime}$ $\wedge$ B$\cap$F$\neq \emptyset$\}
+  \item[\delt{}$^{\prime}$ =] \{(Q y $\bigcup$E(p)) $|$ p$\in$K $\wedge$ (q y p)$\in$\delt{} $\wedge$ Q$\in$K$^{\prime} \wedge$ q$\in$Q\} \newline
+\end{description}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Design Idea}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1->  \texttt{N = (make-ndfa S \sig{} s F \delt)} 
+
+\item<1->What we do: find the transition function \arrow encode the \dfa{} 
+
+\item<2-> Encoding of the \texttt{dfa}:
+\begin{alltt}
+ (make-dfa
+   K\(\sp{\prime}\)=<encoding of super states>
+   \sig{}
+   s\(\sp{\prime}\)=<encoding of E(s)>
+   F\(\sp{\prime}\)=<encoding of final super states>
+   \delt{}\(\sp{\prime}\)=<encoded super states transition function>)
+\end{alltt}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\subsection{Illustrative Example}
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+
+\begin{center}
+\includegraphics[scale=0.5]{sample-ndfa.png}
+\end{center}
+
+
+\end{scriptsize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1->
+The result of computed empties for each state of the ndfa:
+\begin{figure}[t!]
+\centering
+\begin{subfigure}{0.3\textwidth}
+\begin{center}
+\begin{tabular}{|c|l|}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  state & E(state) \\ \hline
+  S & (S) \\ \hline
+  A & (A) \\ \hline
+  B & (B) \\ \hline
+  C & (C) \\ \hline
+  D & (D S) \\ \hline
+  E & (E S) \\ \hline
+\end{tabular}
+\end{center}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.5\textwidth}
+\centering
+\includegraphics[scale=0.35]{sample-ndfa.png}
+\label{aa-ab}
+\end{subfigure}
+\end{figure}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1->
+The following table summarizes the computed super state transition function: \newline
+\begin{figure}[t!]
+\centering
+\begin{subfigure}{0.7\textwidth}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  \texttt{Super State} & \texttt{a}         & \texttt{b} \\ \hline
+  (S)         & (A B)     & () \\ \hline
+  (A B)       & ()        & (C D S) \\ \hline
+  (C D S)     & (E S A B) & () \\ \hline
+  (E S A B)   & (A B)     & (C D S) \\ \hline
+  ()          & ()        & () \\ \hline
+\end{tabular}
+\end{center}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.4\textwidth}
+\centering
+\includegraphics[scale=0.35]{sample-ndfa.png}
+\label{aa-ab}
+\end{subfigure}
+\end{figure}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> To build a dfa the super states must be mapped to \texttt{FSM} states. The following table is one such encoding:
+
+\begin{center}
+\begin{tabular}{|l|c|}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  \texttt{Super State} & \texttt{dfa} \ \texttt{State}  \\ \hline
+  (S)         & S         \\ \hline
+  (A B)       & A         \\ \hline
+  (C D S)     & B         \\ \hline
+  (E S A B)   & C         \\ \hline
+  ()          & DEAD      \\ \hline
+\end{tabular}
+\end{center}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The Transformation in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1->
+\begin{figure}[t!]
+\centering
+\begin{subfigure}{0.7\textwidth}
+\centering
+\includegraphics[scale=0.35]{sample-ndfa.png}
+\caption{\texttt{ndfa} transition diagram.}
+\label{samplendfa-graph}
+\end{subfigure}
+\hfill
+\item<2->
+\begin{subfigure}{0.7\textwidth}
+\centering
+\includegraphics[scale=0.35]{sample-dfa.png}
+\caption{\texttt{dfa} transition diagram.}
+\label{sample-dfa}
+\end{subfigure}
+\end{figure}
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\section{Visualization in FSM}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> Two state diagrams built at every step.
+\item<2->   N \arrow always fully displayed
+\item<3->  D \arrow built one transition at a time.
+\item<4-> We can step backwards!!! :)
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> WARNING: Names, names, names....
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> N's edges are partitioned into three color coded subsets: \newline
+
+\begin{center}
+\includegraphics[scale=0.7]{hedge.png}
+\end{center}
+
+\item<1-> HEDGES - \textcolor{magenta}{H}ighlighted \textcolor{magenta}{edges}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> N's edges are partitioned into three color coded subsets: \newline
+
+\begin{center}
+\includegraphics[scale=0.7]{fedge.png}
+\end{center}
+
+\item<1-> FEDGES - \textcolor{magenta}{F}aded \textcolor{magenta}{edges}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> N's edges are partitioned into three color coded subsets: \newline
+
+\begin{center}
+\includegraphics[scale=0.7]{bledge.png}
+\end{center}
+
+\item<1-> BLEDGES - \textcolor{magenta}{Bl}ack \textcolor{magenta}{edges}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> N's edges are partitioned into three color coded subsets: \newline
+
+\begin{center}
+\includegraphics[scale=0.65]{FBH.png}
+\end{center}
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> The visualization has to track processed and unprocessed edges of both the \ndfa{} and the \dfa{}. \newline
+
+
+\begin{alltt}
+\textcolor{magenta}{
+;; a vst is a structure that consists of
+;; upedges - unprocessed edges of the \dfa{}
+;; pedges - processed edges of the \dfa{}
+;; inodes - nodes included in the construction of the \dfa{}
+;; M - given \ndfa{}
+;; hedges - a list of highlighted edges in the ndfa graph
+;; fedges - a list of faded edges in the ndfa graph
+;; bledges - a list of black edges in the ndfa graph} \newline
+(struct vst (upedges pedges inodes M hedges fedges bledges))
+\end{alltt}
+
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+
+\item<1-> Moving the transformation one step forward: \newline
+
+
+
+\noindent
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.31]{step1.png}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.3]{step2.png}
+\end{minipage}
+
+
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+
+\item<1-> Moving the transformation one step backward: \newline
+
+\noindent
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.3]{step2.png}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.31]{step1.png}
+\end{minipage}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Visualization in FSM}
+%\framesubtitle{Illustrative Example}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completing the transformation in one step:
+
+\noindent
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.31]{starting.png}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\includegraphics[scale=0.28]{complete.png}
+\end{minipage}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\section{Concluding Remarks}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+\normalsize
+\item<1-> Using this tool, any user can: \newline
+\begin{itemize}
+\item[\arrow]
+Easily determine why the dfa’s super states exist \newline
+\item[\arrow]
+See how all ndfa edges are processed \newline
+\item[\arrow]
+Comprehend the development of the dfa’s transition function.
+
+\end{itemize}
+
+\item<2-> Unlike previous visualizations, our visualization moves \emph{backwards}.
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr1.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{comparison.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr3.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr4.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr5.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr6.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr7.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr8.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr9.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+
+\item<1-> Completed transformation in FSM and JFLAP. \newline
+
+
+\begin{center}
+\includegraphics[scale=0.3]{cmpr10.png}
+\end{center}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\begin{itemize}
+\item<1-> Future work includes adding visualizations for other machine transformations or constructors. \newline
+\begin{itemize}
+\scriptsize
+\item[\arrow] Transformations: ndfa\arrow regexp and regexp\arrow ndfa \newline
+\item[\arrow] Constructors: closure properties under union, Kleene star, concatenation, complement, intersection
+\end{itemize}
+
+
+\end{itemize}
+\end{scriptsize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Concluding Remarks}
+\begin{scriptsize}
+\large
+\begin{center}
+\includegraphics[scale=0.17]{book-cover.jpg}
+\end{center}
+
+\begin{center}
+Thank you for your attention! Any questions? :) \newline
+\end{center}
+
+
+\end{scriptsize}
+\end{frame}
+
+
+\end{document} 

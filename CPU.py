@@ -1,46 +1,45 @@
 import sys
+"""
+read (proper usage):
+CPU and Printer can use freely
+write (proper usage):
+CPU and Printer may use freely
+process (execute):
+this is a cpu-exclusive function for
+executing assembler written in the printer's format
+printers format would look like the following
+MOV 10 eax
+MULT 10 eax -> ACC = 100
+MOV ACC eax
+
+"""
+class Interrupt:
+    pass
+class Memory:
+    #Cache, Main Memory(RAM), Hard Disk (HDD)
+    def __init__(self):
+        self.cache=[0]*512 #"512 KB" cache
+        self.ram = [0]*1024 #"1 MB" RAM
+    def RAM(self):
+        return self.ram
+    #Cache functions
+    def CACHE(self):
+        return self.cache
+    #Purpose: Frees the memory on the given interval
+    def FREE(self,memory_loc,start,end):
+        for x in range(start-end):
+            memory_loc[x+start] = 0
+    def READ(self,start,end):
+        try:
+            if start - end > len(self.cache):#if the resulting memory segment can't be located entirely on cache
+                mem = self.ram[start:end] #grab it from the RAM
+                self.FREE(self.ram,start,end)
+                return mem
+            else:
+
+
 class CPU:
-    #Instruction Set Architecture
-    ISA ={
-        #register access:
-        'IR': self.IR(),
-        'EAX': self.getReg("EAX"),
-        'EBX': self.getReg("EBX"),
-        'ECX': self.getReg("ECX"),
-        'EDX': self.getReg("EDX"),
-        'RE4': self.getReg("RE4"),
-        'RE5': self.getReg("RE5"),
-        'RE6': self.getReg("RE6"),
-        'RE7': self.getReg("RE7"),
-        'USR': self.getReg("USR"),
-        "UNR": self.getReg("UNR"),
-        #arithmetic:
-        'ADD': (lambda a,b: a+b),
-        'SUB': (lambda a,b: a-b),
-        'DIV': (lambda a,b: a/b),
-        'MULT': (lambda a,b: a*b),
-        'CMP': (lambda a,b: 1 if a>b \
-                else -1 if a<b else 0),
-        #logical operations
-        'AND': (lambda a,b: a and b),
-        'OR': (lambda a,b: a or b),
-        'NOR': (lambda a,b: not (a or b)),
-        'XOR': (lambda a,b: not a or not b),
-        'NAND': (lambda a,b: not a and not b),
-        # instruction operations
-        'MOV': (lambda a,b: (a := b)),
-        'RET': self.PREG("ACC"),#Returns the result of the most recent operation on ACC
-        'JMP': (lambda a: self.setPC(a)),
-        'JLE': (lambda a: self.setPC(a) if self.PREG("ACC") <= 0),
-        'JE': (lambda a: self.setPC(a) if self.PREG("ACC") == 0),
-        'JGE': (lambda a: self.setPC(a) if self.PREG("ACC") >= 0),
-        'JL': (lambda a: self.setPC(a) if self.PREG("ACC") < 0),
-        'JG': (lambda a: self.setPC(a) if self.PREG("ACC") == 1),
-        'JNE': (lambda a: self.setPC(a) if not self.PREG("ACC") == 0),
-        #I/O
-        'PRNT': (lambda a: print(a)),
-        'INPT': (lambda a,b: setREG(a,input()))
-        }
+    
         #following the x86 instruction set, 
     def __init__(self):
         #some immediate cache registers
@@ -57,22 +56,29 @@ class CPU:
         #preg[3] = MAR = MEMORY ADDRESS REGISTER
         #preg[4] = MDR = MEMORY DATA REGISTER
     #Access methods.
-    #getRegister ("getReg")
     #Designed this way so that the dictionary calls a function
     #rather than being passed a reference, so that it can automatically
     #update as the CPU executes code
+    #hitReg: register name, registry -> int
+    #Purpose: Returns the index of the program registry on the CPU
+    def hitReg(self,register,registry):
+        return registry.index(register)
+    #PREG: reg name -> data
+    #Purpose: gets the data stored on the given program register
     def PREG(self, register):
-        reglist = ["ACC","PC","IR","MAR","MDR"]
-        return self.preg[reglist.index(register)]
+        return self.preg[self.hitReg(register,["ACC","PC","IR","MAR","MDR"])]
+    #Purpose: mutates the given register to the given value
     def setPREG(self, register,value):
-        ISA[register] = value
+        self.preg[self.hitReg(register,["ACC","PC","IR","MAR","MDR"])] = value
     #REG: string -> value
     #Purpose: Gets the value of the specified register.
     def REG(self, register):
-        reglist = ["EAX","EBX","ECX","EDX","RE4","RE5","RE6","RE7","USR","UNR"]
-        return self.reg[reglist.index(register)]
+        return self.reg[self.hitReg(register,["EAX","EBX","ECX","EDX","RE4","RE5","RE6","RE7","USR","UNR"])]
     def setREG(self, register, value):
-        ISA[register] = value
+        if value in ["EAX","EBX","ECX","EDX","RE4","RE5","RE6","RE7","USR","UNR"]:
+            self.reg[self.hitReg(register,["EAX","EBX","ECX","EDX","RE4","RE5","RE6","RE7","USR","UNR"])] = self.REG(value)
+        else:
+            self.reg[self.hitReg(register,["EAX","EBX","ECX","EDX","RE4","RE5","RE6","RE7","USR","UNR"])] = value
     def setACC(self, new_acc):
         self.preg[0] = new_acc
     def setPC(self, new_pc):
@@ -83,45 +89,127 @@ class CPU:
         self.preg[3] = new_mar
     def setMDR(self, new_mdr):
         self.preg[4] = new_mdr
+    #serves to iterate the program counter
+    def iterate(self):
+        self.setIR(self.PREG("PC")) #increment current instruction register
+        self.setPC(self.PREG("PC")+1) #increment program counter
+    ##FDE Cycle
+    #int -> datum
+    #Purpose: Given a place to fetch memory from (cache,ram),
+    #return the instruction arriving from said idx.
+    def fetch(self,memoryloc,idx):
+        return memoryloc[idx]
+    #decode: Instruction -> list[opcode,operand, operand, ...]
+    #Purpose: Decodes an instruction passed to this function into
+    #one operable by the CPU.
+    def decode(self,instruction):
+        line = instruction.split(" ")
+        opcode = line[0]
+        operand1 = None
+        operand2 = None
+        inst = [opcode] #decoded instructions
+        #parseOperand: string -> operand
+        #Purpose: Converts a segment of OSSembler operand code. Valid OSSembler operands are registers, integers, and floats
+        def parseOperand(item):
+            if item not in self.ISA.keys():
+                if "." in item:
+                    try:
+                        return float(item)
+                    except ValueError:
+                        return item
+                else:
+                    try:
+                        return int(item)
+                    except ValueError:
+                        return item
+            else:
+                return item
+        if len(line) == 3:
+            inst.append(parseOperand(line[1]))
+            inst.append(parseOperand(line[2]))
+            return inst
+        elif len(line)==2:
+            inst.append(parseOperand(line[1]))
+            return inst
+        else:
+            return inst
+    #execute: opcode, operand, operand -> (Effect)
+    #Purpose: Performs the CPU-operable instruction
+    #Instructions have various effects, I suggest reading
+    #the instruction set. Generally the instructions
+    def execute(self,opcode,operand1,operand2):
+        if operand1 is None:
+            self.ISA[opcode]()
+        elif operand2 is None:
+            self.ISA[opcode](operand1)
+        else:
+            self.ISA[opcode](operand1,operand2)
     #process: string -> (void)
     #Purpose: processes the current instruction
     #EFFECT:
     #Changes the state of registers to reflect the input
     #Always changes the program counter (next instruction)
-    def process(self,instruction):
+    def process(self,instruction,memoryset):
         #jump flag
         jf = self.PREG("PC")
-        line = instruction.split(" ")
-        opcode = line[0]
-        operand1 = ""
-        operand2 = ""
-        #parseOperand: string -> operand
-        #Purpose: Converts a segment of OSSembler operand code. Valid OSSembler operands are registers, integers, and floats
-        def parseOperand(item):
-            if item not in ISA.keys():
-                if "." in item:
-                    return float(item)
-                else:
-                    return int(item)
-            else:
-                return item
-
-        if len(line) == 3:
-            operand1 = parseOperand(line[1])
-            operand2 = parseOperand(line[2])
-            op = 3
-        elif len(line) == 2:
-            operand1 = parseOperand(line[1])
-            op = 2
-        if op == 3:
-            ISA[opcode](operand1,operand2)
-        elif op == 2:
-            ISA[opcode](operand1)
-        #first element is instruction
-        #second element is operand 1
-        #third is operand 2
-
-        #ISA[instruction[0]]()
+        while True:
+            try:
+                operation = self.decode(self.fetch(memoryset,instruction))
+                self.execute(operation[0],operation[1],operation[2])
+                #the following code is structured as is to handle jumps.
+                if jf == self.PREG("PC"):
+                    self.iterate()
+                    self.process(self.PREG("IR"),memoryset)
+            except IndexError:
+    #Instruction Set Architecture
+    def ISA(self):
+        my_architecture = {
+            #register access:
+            'IR': self.IR(),
+            'EAX': self.REG("EAX"),
+            'EBX': self.REG("EBX"),
+            'ECX': self.REG("ECX"),
+            'EDX': self.REG("EDX"),
+            'RE4': self.REG("RE4"),
+            'RE5': self.REG("RE5"),
+            'RE6': self.REG("RE6"),
+            'RE7': self.REG("RE7"),
+            'USR': self.REG("USR"),
+            "UNR": self.REG("UNR"),
+            #arithmetic:
+            'ADD': (lambda a,b: a+b),
+            'SUB': (lambda a,b: a-b),
+            'DIV': (lambda a,b: a/b),
+            'MULT': (lambda a,b: a*b),
+            'CMP': (lambda a,b: 1 if a>b \
+                    else -1 if a<b else 0),
+            #logical operations
+            'AND': (lambda a,b: a and b),
+            'OR': (lambda a,b: a or b),
+            'NOR': (lambda a,b: not (a or b)),
+            'XOR': (lambda a,b: not a or not b),
+            'NAND': (lambda a,b: not a and not b),
+            # instruction operations
+            'MOV': (lambda a,b: self.setREG(a,b)),
+            'RET': self.PREG("ACC"),#Returns the result of the most recent operation on ACC
+            'JMP': (lambda a: self.setPC(a)),
+            'JLE': (lambda a: self.setPC(a) if self.PREG("ACC") <= 0 else None),
+            'JE': (lambda a: self.setPC(a) if self.PREG("ACC") == 0 else None),
+            'JGE': (lambda a: self.setPC(a) if self.PREG("ACC") >= 0 else None),
+            'JL': (lambda a: self.setPC(a) if self.PREG("ACC") < 0 else None),
+            'JG': (lambda a: self.setPC(a) if self.PREG("ACC") == 1 else None),
+            'JNE': (lambda a: self.setPC(a) if not self.PREG("ACC") == 0 else None),
+            #I/O
+            'PRNT': (lambda a: print(a)),
+            'INPT': (lambda a,b: self.setREG(a,input())) }
+    class OSSIM:
+        #An OSSIM is a simple, simulated operating system.
+        #It includes a CPU, Memory, and its own dedicated storage system to manage memory buffers
+        #across the cache and RAM.
+        def __init__(self):
+            buffers = []
+        def addBuffer(self,start,end)
+            return {"start":start,"end":end}
         pass
     #Design Process:
     #1. Printer Class

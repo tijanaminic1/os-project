@@ -15,10 +15,9 @@ MOV ACC eax
 class Memory:
     #Cache, Main Memory(RAM), Hard Disk (HDD)
     def __init__(self):
-        self.cache=[0]*1024 #1 MB cache
-        self.RAM = [0]*1024*1024
-        self.disk = [0]
-    def read(self, addr):
-        pass
-    def write(self, addr):
-        pass
+        self.cache=[0]*512 #"512 KB" cache
+        self.ram = [0]*1024 #"1 MB" RAM
+    def RAM(self):
+        return self.ram
+    def CACHE(self):
+        return self.cache

@@ -1,65 +1,13 @@
 import sys
-"""
-read (proper usage):
-CPU and Printer can use freely
-write (proper usage):
-CPU and Printer may use freely
-process (execute):
-this is a cpu-exclusive function for
-executing assembler written in the printer's format
-printers format would look like the following
-MOV 10 eax
-MULT 10 eax -> ACC = 100
-MOV ACC eax
-
-"""
-#an Interrupt is an object
-#representing a system interrupt, it also sends a strategy to
-#the OSSIM to handle said interrupt, by signing its name.
+from typing import List
 class Interrupt:
     def __init__(self, str, args):
         self.interrupt = str
         self.args = args
-
-class Memory:
-    #Cache, Main Memory(RAM)
-    def __init__(self):
-        self.cache=[None]*512 #"512 KB" cache
-        self.ram = [None]*1024 #"1 MB" RAM
-    def RAM(self):
-        return self.ram
-    #Cache functions
-    def CACHE(self):
-        return self.cache
-    #Purpose: Frees the memory on the given interval
-    def FREE(self,memory_loc,start,end):
-        for x in range(start-end):
-            memory_loc[x+start] = None
-    def READ(self,start,end):
-        try:
-            if start - end > len(self.cache):#if the resulting memory segment can't be on the cache
-                mem = self.ram[start:end] #grab it from the RAM
-                self.FREE(self.ram,start,end)
-                return mem
-            else:
-                mem = self.cache[start:end]
-                self.FREE(self.cache,start,end)
-                return mem
-        except IndexError:
-            return Interrupt("MemoryDNE")
-    def WRITE(self,start,end):
-        try:
-            
-
-
 class CPU:
-    
         #following the x86 instruction set, 
     def __init__(self):
-        #some immediate cache registers
-        #this is modeled off of x86 architecture,
-        #but it'd be overkill to emulate all x86 registers.
-        #there are going to be 10 of them, named as:
+        #ten general purpose registers, named as:
         #EAX,EBX,ECX,EDX,RE4,RE5,RE6,RE7,USR,UNR
         self.reg = [0]*10
         #As for Program Registers, there will be 6
@@ -69,10 +17,6 @@ class CPU:
         #preg[2] = IR = CURRENT INSTRUCTION REGISTER
         #preg[3] = MAR = MEMORY ADDRESS REGISTER
         #preg[4] = MDR = MEMORY DATA REGISTER
-    #Access methods.
-    #Designed this way so that the dictionary calls a function
-    #rather than being passed a reference, so that it can automatically
-    #update as the CPU executes code
     #hitReg: register name, registry -> int
     #Purpose: Returns the index of the program registry on the CPU
     def hitReg(self,register,registry):
@@ -116,7 +60,7 @@ class CPU:
     #int -> datum
     #Purpose: Given a place to fetch memory from (cache,ram),
     #return the instruction arriving from said idx.
-    def fetch(self,memoryloc,idx):
+    def fetch(self,memoryloc: List,idx):
         return memoryloc[idx]
     #decode: Instruction -> list[opcode,operand, operand, ...]
     #Purpose: Decodes an instruction passed to this function into
@@ -124,8 +68,6 @@ class CPU:
     def decode(self,instruction):
         line = instruction.split(" ")
         opcode = line[0]
-        operand1 = None
-        operand2 = None
         inst = [opcode] #decoded instructions
         #parseOperand: string -> operand
         #Purpose: Converts a segment of OSSembler operand code. Valid OSSembler operands are registers, integers, and floats
@@ -174,10 +116,18 @@ class CPU:
         while True:
             try:
                 operation = self.decode(self.fetch(memoryset,instruction))
-                self.execute(operation[0],operation[1],operation[2])
+                if operation[0] not in ["ADD","SUB","DIV","MULT","CMP","AND","OR","NOR","XOR","NAND"]:
+                    self.execute(operation[0],operation[1],operation[2])
+                else:
+                    self.setACC(self.execute(operation[0],operation[1],operation[2]))
                 #the following code is structured as is to handle jumps.
                 if jf == self.PREG("PC"):
                     self.iterate()
+                    self.process(self.PREG("IR"),memoryset)
+                else:
+                    t = self.PREG("PC")
+                    self.setIR(t)
+                    self.setPC(t+1)
                     self.process(self.PREG("IR"),memoryset)
             except IndexError:
                 break
@@ -224,38 +174,82 @@ class CPU:
             'PRNT': (lambda a: print(a)),
             'INPN': Interrupt("InputNumber"),#(lambda a,b: self.setREG(a,input())) }
             'INPS': Interrupt("InputString")}
-    class OSSIM:
-        #An OSSIM is a simple, simulated operating system.
-        #It includes a CPU, Memory, and its own dedicated storage system to manage memory buffers
-        #across the cache and RAM.
-        def __init__(self):
-            self.cpu = CPU()
-            self.memory = Memory()
-            buffers = [] #Essentially a program call stack. Applications, processes, and scripts queue up for CPU time.
-            current = None #the current buffer, which contains a program, or operation.
-        #Memory Manager
-        def addBuffer(self,start,end):
-            return {"start":start,"end":end}
-        #Interrupt Handler
-        def InterruptHandler(self,inter):
-            if inter == Interrupt("MemoryDNE"):
-                print("Operation cannot be read from buffer. Terminating program.")
+class Memory:
+    #Cache, Main Memory(RAM)
+    def __init__(self):
+        self.cache=[None]*512 #"512 KB" cache
+        self.ram = [None]*10 #"10 MB" RAM. Represented as such
+        #because RAM will be a list of program states, {"CPU_State":CPU,"INSTRUCTIONS":instructions}
+    def RAM(self):
+        return self.ram
+    #Cache functions
+    def CACHE(self):
+        return self.cache
+#TODO: needs
+#InterruptHandler
+#Memory Management
+#
+class OSSIM:
+    def __init__(self):
+        self.memory = Memory()
+        self.cache = self.memory.cache #Cache is always a list of instructions
+        self.RAM = self.memory.ram #RAM is always a list of program states
+        self.CPU = CPU()
+        self.cacheptr = 0
+    def cacheToRAM(self,start,end):
+        if not self.cache[9] == None:
+             self.InterruptHandler(Interrupt("RAMFull"))
+        else:
+            for x in range(len(self.cache)):
+                if x == None:
+    def lineToCache(self,start,end):
+    #performs a DMA operation
+    def DMA(self,file,location):
 
-            elif inter == Interrupt("InputNumber"):
-                self.cpu.setREG("UNR",input())
-            elif inter == Interrupt("InputString"):
-                self.cpu.setREG("USR",input())
-            elif inter == Interrupt("RET"):
-                print("Program Complete! Result:")
-                print(self.cpu.PREG("ACC"))
-                if len(self.buffers) > 0:
-                    self.current = self.buffers.pop(0)
-                   
+
+    def InterruptHandler(self, i: Interrupt):
 
         pass
-    #Design Process:
-    #1. Printer Class
-    #-> R/W files
-    #-->when writing a new file, DMA-process
-    #-->text typed is stored to main memory via DMA
-    #-->text can then be saved into hard disk
+#Consider the main to be the Operating System's kernel,
+#I always assume that enough CPU resources are available
+#to submit commands to the kernel, as well as to execute it
+#because otherwise the code would get /very/ messy for this
+#simple uniprogramming operating system.
+if __name__ == "__main__":
+    os = OSSIM()
+    programs = ["open","execute","touch","append"] #and bye
+
+    print("Hello user! Welcome to OSSIM, the only Operating System to use the OSSembler Architecture.")
+    while True:
+        uinput = input().split(" ")
+        if uinput[0] not in programs and not uinput[0] == "bye":
+            print("Unrecognized program. System update (hopefully) coming soon.")
+            print("Please use a supported application, such as open, execute, author, or append. You may submit bye to logout.")
+        elif uinput[0] == "bye":
+            sys.close()
+        elif len(uinput) > 1:
+            if uinput[0] in programs:
+                    try:
+                        if uinput[0] == "open": #prints contents of file to interface
+                            print("Contents of "+ uinput[1] + ":")
+                            print("========================")
+                            with open(uinput[1], 'r') as fin:
+                                print(fin.read())
+                            print("========================")
+                        elif uinput[0] == "touch": #makes new file of given name
+                            pass
+                        elif uinput[0] == "append":#opens existing file 
+                            with open(uinput[1], 'a+') as fin:
+                                fin.writelines(input(uinput[1] + " opened. Enter line to append to document."))
+                            print("=============File updated.===============")
+                        else:#execute runs a file using the CPU
+
+                            with open(uinput[1], 'r') as fin:
+                                for line in fin:
+                                    ###
+
+
+                    except IOError:
+                        inter = Interrupt("FileNotFound")
+                    
+

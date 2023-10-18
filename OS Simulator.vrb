@@ -1,0 +1,15 @@
+\frametitle{IExecution Process}
+\begin{itemize}
+\item<1-> \texttt{Decode and Execute Loop:}
+\begin{itemize}
+
+\item[\arrow] Memory Addressing: Retrieves instructions from memory using program counter.
+
+\item[\arrow]  Decoding: Uses the decoder to interpret opcodes and fetch corresponding instructions.
+
+\item[\arrow]  Execution: Modifies CPU state based on the decoded instruction.
+
+\end{itemize}
+
+\item<2->\texttt{Continual Loop}: Runs indefinitely, simulating continuous instruction execution.
+\end{itemize}

@@ -1,6 +1,7 @@
 from collections.abc import MutableMapping
 from dataclasses import dataclass
-import opcode_parser
+from opcode_parser import *
+from Decoder import *
 REGISTERS_LOW = {"F": "AF", "C": "BC", "E": "DE", "L": "HL"}
 REGISTERS_HIGH = {"A": "AF", "B": "BC", "D": "DE", "H": "HL"}
 REGISTERS = {"AF", "BC", "DE", "HL", "PC", "SP"}
@@ -19,7 +20,7 @@ class Registers(MutableMapping):
     def values(self):
         return [self.AF, self.BC, self.DE, self.HL, self.PC, self.SP]
 
-    #Returns an interator of self.values
+    #Returns an iterator of self.values
     def __iter__(self):
         return iter(self.values())
 
@@ -35,7 +36,9 @@ class Registers(MutableMapping):
 
     Low registers are bitwise ANDed with the mask 0xFF as that matches the low 8 bits.
 
-    Flags are instead shifted by their position in AF so the bit we care about is put in the right-most position where we can bitwise AND with 1 to check if it is set or not.
+    Flags are instead shifted by their position in AF so the bit we care about is put in the right-most position 
+    
+    where we can bitwise AND with 1 to check if it is set or not.
 
     Requests for 16-bit registers is a simple matter of returning that value, unmodified.
 

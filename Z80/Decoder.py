@@ -2,7 +2,8 @@ import sys
 from dataclasses import dataclass
 from typing import Literal
 import pytest
-import opcode_parser
+from opcode_parser import InstructionSet
+from opcode_parser import *
 @dataclass
 class Decoder:
 
@@ -12,7 +13,7 @@ class Decoder:
     instructions: dict
 
     @classmethod
-    def create(cls, opcode_file: Path, data: bytes, address: int = 0):
+    def create(cls, opcode_file, data: bytes, address: int = 0):
         # Loads the opcodes from the opcode file
         prefixed = InstructionSet().cbprefixed
         unprefixed = InstructionSet().unprefixed

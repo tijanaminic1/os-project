@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from . import Registers
 class ReadyQueue:
     def __init__(self):
         self.items = []
@@ -16,19 +18,9 @@ class ReadyQueue:
 
     def size(self):
         return len(self.items)
-    
+@dataclass    
 class Thread:
     
-    def __init__ (self, r1, r2, r3, r4, r5, r6, pc, sp):
-        self.r1 = r1
-        self.r2 = r2
-        self.r3 = r3
-        self.r4 = r4
-        self.r5 = r5
-        self.r6 = r6
-        self.pc = pc
-        self.sp = sp
-
-
+    register: Registers #This will do the init stuff for you, unless you've got more to add.
     
-
+    #Methods go here...

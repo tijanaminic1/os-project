@@ -4,16 +4,15 @@ from typing import List, Literal
 #def DMA(start:List,end:List):
 #Implement later
 
-
 @dataclass
 class Memory:
-    RAM: List[int]
-    cache: List[int]
-
-    def RAM(self):
-        return self.RAM
-    def cache(self):
-        return self.cache
+    data: List[int]
+    def DATA(self):
+        return self.data
+    def write(self, int start, data):
+        pass
+    def read(self):
+        pass
     #TODO:
     #create a size enforcement protocol.
     #Write in a way to simulate memory limit.

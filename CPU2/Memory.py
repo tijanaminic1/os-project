@@ -10,9 +10,9 @@ class Memory:
     def DATA(self):
         return self.data
     def write(self, start: int, data: T):
-        pass
-    def read(self):
-        pass
+        self.data[start] = data
+    def read(self, loc: int):
+        return self.data[loc]
     #TO-DO:
     #create a size enforcement protocol.
     #Write in a way to simulate memory limit.

@@ -6,6 +6,7 @@
 #Decoder, or Disassembler depending on your
 #desired nomenclature.
 from . import Memory
+import functools
 #Instruction Set is mapped 1:1, so
 #it is possible to use an instruction's mnemonic
 #to find its hex value, and a hex value to find the mnemonic.
@@ -60,6 +61,18 @@ class Instruction:
             self.name = args[0]
             self.arguments = args[1:]
             self.size = len(args)
+    #mnemonic: -> string
+    #purpose: returns the name of an instruction
+    def mnemonic(self):
+        return self.name
+    #operands: -> list
+    #purpose: returns the operands taken by the instruction.
+    def operands(self):
+        return self.arguments
+    #size: -> int
+    #purpose: returns the number of operands the instruction has
+    def size(self):
+        return self.size
 @staticmethod 
 def makeInstruction(str):
     word = str.split(" ")
@@ -74,11 +87,11 @@ class Decoder:
     def decode(inst: Instruction)->(function, list):
         match inst:
             case Instruction(name="NOP"):
-                pass
+                pass #this is the proper "NOP" instruction.
             case Instruction(name="ADD"):
-                pass
+                return ((lambda a: sum(a)),inst.operands()) #We return the instruction to be executed and the operands
             case Instruction(name="SUB"):
-                pass
+                return ((lambda a: functools.reduce(lambda x,y: x-y, a,initializer=0)),inst.operands())
             case Instruction(name="DIV"):
                 pass
             case Instruction(name="MUL"):

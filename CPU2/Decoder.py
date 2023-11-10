@@ -7,6 +7,9 @@
 #desired nomenclature.
 from . import Memory
 import functools
+
+class InstructionError(Exception):
+    pass
 #Instruction Set is mapped 1:1, so
 #it is possible to use an instruction's mnemonic
 #to find its hex value, and a hex value to find the mnemonic.
@@ -84,16 +87,20 @@ class Decoder:
             return mem_loc[location]
         except IndexError:
             pass#IMPLEMENT LATER
-    def decode(inst: Instruction)->(function, list):
+    def decode(inst: Instruction)->(str,function, list):
+        #lets me pass a no argument function.
+        def helper():
+            pass
+        instructions = (inst.mnemonic(),(lambda: helper()),inst.operands())
         match inst:
             case Instruction(name="NOP"):
                 pass #this is the proper "NOP" instruction.
             case Instruction(name="ADD"):
-                return ((lambda a: sum(a)),inst.operands()) #We return the instruction to be executed and the operands
+                return (inst.mnemonic(),(lambda a: sum(a)),inst.operands()) #We return the instruction to be executed and the operands
             case Instruction(name="SUB"):
-                return ((lambda a: functools.reduce(lambda x,y: x-y, a,initializer=0)),inst.operands())
+                return (inst.mnemonic(),(lambda a: functools.reduce(lambda x,y: x-y, a,initializer=0)),inst.operands())
             case Instruction(name="DIV"):
-                pass
+                return (inst.mnemonic(),)
             case Instruction(name="MUL"):
                 pass
             case Instruction(name="CMP"):
@@ -106,3 +113,29 @@ class Decoder:
                 pass
             case Instruction(name="XOR"):
                 pass
+            case Instruction(name="NAND"):
+                pass
+            case Instruction(name="MOV"):
+                pass
+            case Instruction(name="RET"):
+                pass
+            case Instruction(name="JMP"):
+                pass
+            case Instruction(name="JLE"):
+                pass
+            case Instruction(name="JE"):
+                pass
+            case Instruction(name="JGE"):
+                pass
+            case Instruction(name="JL"):
+                pass
+            case Instruction(name="JG"):
+                pass
+            case Instruction(name="JNE"):
+                pass
+            case Instruction(name="PRINT"):
+                pass
+            case Instruction(name="INPUT"):
+                pass
+            case _:
+                raise InstructionError

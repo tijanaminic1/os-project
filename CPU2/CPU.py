@@ -1,40 +1,61 @@
 from dataclasses import dataclass
-from . import Registers, Decoder, Instruction
+from . import Registers, Decoder, Interrupt, Memory
+from Decoder import Instruction
 @dataclass
 class CPU:
 
     registers: Registers
     decoder: Decoder
-
-    #is TO-DO
-    def fetch(self, address):
-        pass
-    #is TO-DO
-    def decode(self):
-        pass
+    cache: Memory
+    RAM: Memory
+    #fetch: int -> Instruction
+    #purpose: gets the instruction stored at the given memory location
+    def fetch(self, address)-> Instruction:
+        return self.decoder.fetch(self.cache, address)
+    #decode: Instruction -> 
+    def decode(self,inst: Instruction)->(str,function,list):
+        return self.decoder.decode(inst)
     #Execute: Instruction -> EFFECT!
     #Purpose: Attempts to execute the given instruction, making use
     #of the Decoder in opcode_parser.py to decode the instruction
     #EFFECT!: Based off of the given Instruction, code will be executed
     #that modifies the CPU state relevant to the Instruction's significance
     #within the opcode vocabulary.
-    def execute(self, instruction: Instruction):
-        # Python 3.10 or higher is required for this code.
-        #3.10 supports match/case statements
-        #whereas Python<3.10 would require 
-        match instruction:
-            #TO-DO: Add more instructions, based off of the Z80 opcodes.
-            #its gonna stink
-            #While all of the Z80's opcodes are in loaded json, this CPU sim
-            #really, really, won't need them and so only the most important
-            #one's will end up being written. It'll be fun to go back and actually
-            #code the rest of the instructions to build a functional GameBoy emulator, but it would likely
-            #take more time than is possible to complete in a semester.
-            case Instruction(mnemonic="NOP"):
-                pass
+    def execute(self, instruction: (str,function,list) ):
+        reglist = ["A","B","C","D","E","F","PC","SP"] 
+        operands = instruction[2]
+        fun = instruction[1]
+        #Check operand1's immediate flag
+        immediate = True
+        if len(operands) > 0 and operands[0] in reglist:
+            immediate = False
+        arithmetic = ["ADD","SUB","DIV","MUL"]
+        logic = ["AND","OR","NOR","XOR","NAND"]
+        jumps = ["JMP","JLE","JE","JGE","JG","JL","JNE"]
+        commands = ["RET","NOP","PRINT","INPUT"]
+        
+        #This block translates instructions involving registers.
+        #for example, 'ADD A B' would need to find the register
+        #values of A and B and pass them.
+        #It skips the first value of operands because the first
+        #value of operands would be a destination register or immediate.
+        #Thus if A was 1 and B was 3, it would become:
+        #ADD A 3, or "add 3 to the A register"
+        #Effect!: On matched case, the list is updated such that register references
+        #are passed by their value.
+        def pass_values(l: list) -> list:
+            a = 1
+            while a < len(operands):
+                if l[a] in reglist:
+                    l[a] = self.registers.__getitem__(l[a])
+                a = a+1
+        if immediate:
+            self.registers.__setitem__("SP",fun(operands))
+        else:
+            self.registers.__setitem__(operands[0],fun(operands))
 
-            case _:
-                raise InstructionError(f"Cannot execute {instruction}")
+
+            
     #run: -> Effect!
     #Purpose: Executes instructions arriving from
     #memory, then advances the program counter

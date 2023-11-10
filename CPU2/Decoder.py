@@ -1,11 +1,11 @@
-#decoder is a class specifically
+    #decoder is a class specifically
 #made to decode our assembler language
 #into python-executable code.
 
 #You could call this an assembler compiler,
 #Decoder, or Disassembler depending on your
 #desired nomenclature.
-from . import Memory
+from . import Memory, Interrupt
 import functools
 
 class InstructionError(Exception):
@@ -89,53 +89,54 @@ class Decoder:
             pass#IMPLEMENT LATER
     def decode(inst: Instruction)->(str,function, list):
         #lets me pass a no argument function.
-        def helper():
+        def NOP():
             pass
-        instructions = (inst.mnemonic(),(lambda: helper()),inst.operands())
+        instructions = (inst.mnemonic(),(lambda: NOP()),inst.operands())
         match inst:
             case Instruction(name="NOP"):
                 pass #this is the proper "NOP" instruction.
             case Instruction(name="ADD"):
-                return (inst.mnemonic(),(lambda a: sum(a)),inst.operands()) #We return the instruction to be executed and the operands
+                instructions[1] = (lambda a: sum(a))#We return the instruction to be executed and the operands
             case Instruction(name="SUB"):
-                return (inst.mnemonic(),(lambda a: functools.reduce(lambda x,y: x-y, a,initializer=0)),inst.operands())
+                instructions[1] = (lambda a: functools.reduce(lambda x,y: x-y,a,initializer=0))
             case Instruction(name="DIV"):
-                return (inst.mnemonic(),)
+                instructions[1] = (lambda a: functools.reduce(lambda x,y: x/y,a,initializer=0))
             case Instruction(name="MUL"):
-                pass
+                instructions[1] = (lambda a: functools.reduce(lambda x,y: x*y,a, initializer=0))
             case Instruction(name="CMP"):
-                pass
+                instructions[1] = (lambda a,b: 1 if a>b \
+                    else -1 if a<b else 0)
             case Instruction(name="AND"):
-                pass
+                instructions[1] = (lambda x,y: x and y)
             case Instruction(name="OR"):
-                pass
+                instructions[1] = (lambda x,y: x or y)
             case Instruction(name="NOR"):
-                pass
+                instructions[1] = (lambda x,y: not (x or y))
             case Instruction(name="XOR"):
-                pass
+                instructions[1] = (lambda x,y: True if ((x and not y) or (y and not x)) else False)
             case Instruction(name="NAND"):
-                pass
+                instructions[1] = (lambda x,y: not (x and y))
             case Instruction(name="MOV"):
                 pass
-            case Instruction(name="RET"):
+            case Instruction(name="RET"): #terminates the execution of a procedure and transfers control through a back-link on the stack to the program that originally invoked the procedure
                 pass
             case Instruction(name="JMP"):
-                pass
-            case Instruction(name="JLE"):
-                pass
+                instructions[1] = (lambda a,b: b)
+            case Instruction(name="JLE"):#If val(SP) <= 0 then change Program Counter
+                instructions[1] = (lambda a,b: b if a<=0 else None)
             case Instruction(name="JE"):
-                pass
+                instructions[1] = (lambda a,b: b if a==0 else None)
             case Instruction(name="JGE"):
-                pass
+                instructions[1] = (lambda a,b: b if a>=0 else None)
             case Instruction(name="JL"):
-                pass
+                instructions[1] = (lambda a,b: b if a<0 else None)
             case Instruction(name="JG"):
-                pass
+                instructions[1] = (lambda a,b: b if a>0 else None)
             case Instruction(name="JNE"):
-                pass
+                instructions[1] = (lambda a,b: b if a!=0 else None)
             case Instruction(name="PRINT"):
-                pass
+                instructions[1] = (lambda: Interrupt("PRINT"))
             case Instruction(name="INPUT"):
-                pass
+                instructions[1] = (lambda: Interrupt("INPUT"))
             case _:
                 raise InstructionError

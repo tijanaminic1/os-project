@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from . import Registers, Decoder, Interrupt, Memory
-from Decoder import Instruction
+from Decoder import Instruction, InstructionError
 @dataclass
 class CPU:
 
@@ -49,10 +49,29 @@ class CPU:
                 if l[a] in reglist:
                     l[a] = self.registers.__getitem__(l[a])
                 a = a+1
-        if immediate:
-            self.registers.__setitem__("SP",fun(operands))
-        else:
-            self.registers.__setitem__(operands[0],fun(operands))
+        def execute_instruction():
+            if immediate:
+                self.registers.__setitem__("SP",fun(operands))
+            else:
+                self.registers.__setitem__(operands[0],fun(operands))
+        match instruction[0]:
+            case "JMP"|"JLE"|"JE"|"JGE"|"JG"|"JL"|"JNE": #handle jumps
+                m = fun(self.registers.__getitem___("SP"),operands[0])
+                if m is not None:
+                    self.registers.__setitem__("PC",m-1)#set the PC to m-1.
+            case "AND"|"OR"|"NOR"|"XOR"|"NAND"|"ADD"|"SUB"|"DIV"|"MUL": #handle boolean statements
+                execute_instruction()
+            case "RET":
+                pass
+            case "NOP":
+                pass
+            case "PRINT":
+                pass
+            case "INPUT":
+                pass
+            case _:
+                raise InstructionError
+        #if we're performing a jump operation do the following:
 
 
             

@@ -61,10 +61,3 @@ class Scheduler:
                 thread = CustomThread(thread_id, self.registers, self.queue)
                 thread.start()
                 self.queue.enqueue(thread_id)
-
-def tests():
-    Scheduler()
-    for obj in test:
-        print(obj.regnum, obj.nextreg, obj.val, obj.instruct, sep=' ')
-
-tests()

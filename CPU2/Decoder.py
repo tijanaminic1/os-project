@@ -140,3 +140,4 @@ class Decoder:
                 instructions[1] = (lambda: Interrupt("INPUT"))
             case _:
                 raise InstructionError
+        return instructions

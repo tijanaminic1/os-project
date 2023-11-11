@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from . import Registers, Decoder, Interrupt, Memory
+from . import Registers, Decoder, Interrupt, Memory, ReadyQueue
 from Decoder import Instruction, InstructionError
+from ReadyQueue import CustomThread, Scheduler, ReadyQueue
 @dataclass
 class CPU:
 
@@ -12,9 +13,24 @@ class CPU:
     #purpose: gets the instruction stored at the given memory location
     def fetch(self, address)-> Instruction:
         return self.decoder.fetch(self.cache, address)
-    #decode: Instruction -> 
+    #decode: Instruction -> Tuple
+    #purpose: Decodes an instruction into its mnemonic, 
+    #effects, and locates its operands
     def decode(self,inst: Instruction)->(str,function,list):
         return self.decoder.decode(inst)
+    
+    #InterruptHandler: Interrupt -> Any
+    #Purpose: Handles interrupts
+    def InterruptHandler(i: Interrupt):
+        match i:
+            case Interrupt(name="PRINT"):
+                print(i.items())
+            case Interrupt(name="INPUT"):
+                input(i.items())
+            case Interrupt(name="DMAFatalError"):
+                print("DMA failed due to fatal error.")
+            case Interrupt(name="DMAIndexOutOfBounds"):
+                print("DMA failed! Entry does not exist.")
     #Execute: Instruction -> EFFECT!
     #Purpose: Attempts to execute the given instruction, making use
     #of the Decoder in opcode_parser.py to decode the instruction
@@ -29,10 +45,6 @@ class CPU:
         immediate = True
         if len(operands) > 0 and operands[0] in reglist:
             immediate = False
-        arithmetic = ["ADD","SUB","DIV","MUL"]
-        logic = ["AND","OR","NOR","XOR","NAND"]
-        jumps = ["JMP","JLE","JE","JGE","JG","JL","JNE"]
-        commands = ["RET","NOP","PRINT","INPUT"]
         
         #This block translates instructions involving registers.
         #for example, 'ADD A B' would need to find the register
@@ -54,6 +66,8 @@ class CPU:
                 self.registers.__setitem__("SP",fun(operands))
             else:
                 self.registers.__setitem__(operands[0],fun(operands))
+
+        operands = pass_values(operands)
         match instruction[0]:
             case "JMP"|"JLE"|"JE"|"JGE"|"JG"|"JL"|"JNE": #handle jumps
                 m = fun(self.registers.__getitem___("SP"),operands[0])
@@ -64,17 +78,16 @@ class CPU:
             case "RET":
                 pass
             case "NOP":
-                pass
+                pass #does nothing, as intended.
             case "PRINT":
-                pass
+                self.interruptHandler(Interrupt(name="PRINT",data=operands[2]))
             case "INPUT":
-                pass
+                self.interruptHandler(Interrupt(name="INPUT",data=operands[2]))
             case _:
                 raise InstructionError
         #if we're performing a jump operation do the following:
 
 
-            
     #run: -> Effect!
     #Purpose: Executes instructions arriving from
     #memory, then advances the program counter

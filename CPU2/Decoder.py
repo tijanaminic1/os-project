@@ -1,13 +1,13 @@
-    #decoder is a class specifically
+from . import Memory, Interrupt
+import functools
+
+#decoder is a class specifically
 #made to decode our assembler language
 #into python-executable code.
 
 #You could call this an assembler compiler,
 #Decoder, or Disassembler depending on your
 #desired nomenclature.
-from . import Memory, Interrupt
-import functools
-
 class InstructionError(Exception):
     pass
 #Instruction Set is mapped 1:1, so

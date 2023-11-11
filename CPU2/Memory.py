@@ -24,7 +24,7 @@ class Memory:
 #Purpose: Performs direct memory access according to a given predicate (operation)
 #Effect!: Potentially modifies memory.
 @staticmethod
-def DMA(memory: Memory,operation="",start=-1,data=None):
+def DMA(sender: object,memory: Memory,operation="",start=-1,data=None):
     if start == -1:
         return Interrupt("DMAFatalError")
     match operation:
@@ -38,3 +38,5 @@ def DMA(memory: Memory,operation="",start=-1,data=None):
                 memory.write(start,data)
             except IndexError:
                 return Interrupt("DMAIndexOutOfBounds")
+        case _:
+            return Interrupt("DMAFatalError")

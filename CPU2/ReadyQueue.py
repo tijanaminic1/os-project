@@ -1,4 +1,3 @@
-# main_script.py
 import time
 import threading
 import Registers

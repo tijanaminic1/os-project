@@ -1,3 +1,4 @@
+# main_script.py
 import time
 import threading
 import Registers
@@ -50,7 +51,6 @@ class CustomThread(threading.Thread):
                 break
 
     def execute_instruction(self, instruction):
-        # Your logic for executing instructions goes here
         operation = instruction['operation']
         operand = instruction['operand']
 
@@ -60,7 +60,23 @@ class CustomThread(threading.Thread):
             self.registers['B'] -= operand
         # Add more operations as needed
 
-# Example program:
+# Example usage:
+class Scheduler:
+    def __init__(self):
+        self.queue = ReadyQueue()
+        self.registers = Registers()
+
+    def add_thread(self, thread):
+        self.queue.enqueue(thread)
+
+    def start_scheduling(self):
+        while True:
+            if not self.queue.is_empty():
+                thread = self.queue.dequeue()
+                thread.start()
+                self.queue.enqueue(thread)
+
+# Example programs:
 program1 = [
     {'operation': 'ADD', 'operand': 10},
     {'operation': 'SUB', 'operand': 5},
@@ -75,12 +91,11 @@ program2 = [
 ]
 
 # Example usage:
-registers_instance = Registers()
 queue_instance = ReadyQueue()
 scheduler_instance = Scheduler()
 
-thread1 = CustomThread(1, registers_instance, queue_instance, program1)
-thread2 = CustomThread(2, registers_instance, queue_instance, program2)
+thread1 = CustomThread(1, Registers(), queue_instance, program1)
+thread2 = CustomThread(2, Registers(), queue_instance, program2)
 
 scheduler_instance.add_thread(thread1)
 scheduler_instance.add_thread(thread2)

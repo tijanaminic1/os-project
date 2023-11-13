@@ -2,6 +2,19 @@ import time
 import threading
 import Registers
 
+class Instruction:
+    def __init__(self, operation, operand):
+        self.operation = operation
+        self.operand = operand
+
+class Registers:
+    def __init__(self):
+        self.register_state = {Registers}
+
+    def save_registers(self, thread_id, values):
+        # Implement logic to save register values
+        pass
+
 class ReadyQueue:
     def __init__(self):
         self.items = []
@@ -27,78 +40,70 @@ class ReadyQueue:
             return len(self.items)
 
 class CustomThread(threading.Thread):
-    def __init__(self, thread_id, registers, queue, program):
+    def __init__(self, thread_id, registers, queue, process):
         super().__init__()
         self.thread_id = thread_id
         self.registers = registers
         self.queue = queue
-        self.program = program
-        self.instruction_pointer = 0
+        self.process = process
 
     def run(self):
-        while self.instruction_pointer < len(self.program):
+        while True:
             try:
-                instruction = self.program[self.instruction_pointer]
-                self.execute_instruction(instruction)
-                self.instruction_pointer += 1
-                time.sleep(1)  # Simulate processing time for each instruction
-            except KeyboardInterrupt:
+                # Your thread code here
+                instruction = self.process.get_next_instruction(self.thread_id)
+                if instruction:
+                    print(f"Thread {self.thread_id} executing instruction: {instruction.operation} {instruction.operand}")
+                    # Implement logic to execute instruction and update register state
+                else:
+                    print(f"Thread {self.thread_id} finished execution. Moving to the back of the queue...")
+                    self.queue.enqueue(self.thread_id)
+                    break
+                time.sleep(1)
+            except KeyboardInterrupt:  
                 print(f"Thread {self.thread_id} interrupted. Saving registers and moving to the back of the queue...")
-                register_values = self.registers.copy()
+                register_values = {}  # Replace with actual register values
                 self.registers.save_registers(self.thread_id, register_values)
                 self.queue.enqueue(self.thread_id)
                 break
 
-    def execute_instruction(self, instruction):
-        operation = instruction['operation']
-        operand = instruction['operand']
+class Process:
+    def __init__(self, instructions):
+        self.instructions = instructions
+        self.current_instruction_index = 0
 
-        if operation == 'ADD':
-            self.registers['A'] += operand
-        elif operation == 'SUB':
-            self.registers['B'] -= operand
-        # Add more operations as needed
+    def get_next_instruction(self, thread_id):
+        if self.current_instruction_index < len(self.instructions):
+            next_instruction = self.instructions[self.current_instruction_index]
+            self.current_instruction_index += 1
+            return next_instruction
+        else:
+            return None
 
-# Example usage:
 class Scheduler:
     def __init__(self):
         self.queue = ReadyQueue()
-        self.registers = Registers()
+        self.registers = Registers() 
 
-    def add_thread(self, thread):
-        self.queue.enqueue(thread)
+    def add_thread(self, thread_id, instructions):
+        process = Process(instructions)
+        self.queue.enqueue((thread_id, process))
 
     def start_scheduling(self):
         while True:
             if not self.queue.is_empty():
-                thread = self.queue.dequeue()
+                thread_id, process = self.queue.dequeue()
+                thread = CustomThread(thread_id, self.registers, self.queue, process)
                 thread.start()
-                self.queue.enqueue(thread)
-
-# Example programs:
-program1 = [
-    {'operation': 'ADD', 'operand': 10},
-    {'operation': 'SUB', 'operand': 5},
-    {'operation': 'ADD', 'operand': 7},
-    # Add more instructions as needed
-]
-
-program2 = [
-    {'operation': 'SUB', 'operand': 3},
-    {'operation': 'ADD', 'operand': 8},
-    # Add more instructions as needed
-]
+                self.queue.enqueue((thread_id, process))
 
 # Example usage:
-queue_instance = ReadyQueue()
-scheduler_instance = Scheduler()
+scheduler = Scheduler()
 
-thread1 = CustomThread(1, Registers(), queue_instance, program1)
-thread2 = CustomThread(2, Registers(), queue_instance, program2)
+# Add threads with instructions
+scheduler.add_thread(1, [Instruction("ADD", 10), Instruction("SUB", 5), Instruction("MULT", 2)])
+scheduler.add_thread(2, [Instruction("ADD", 5), Instruction("DIV", 2)])
 
-scheduler_instance.add_thread(thread1)
-scheduler_instance.add_thread(thread2)
-
-scheduler_instance.start_scheduling()
-
+# Start scheduling
+scheduler.start_scheduling()
 

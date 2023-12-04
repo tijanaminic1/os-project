@@ -1,7 +1,14 @@
 from typing import List
-from . import Instruction, Registers
+from dataclasses import dataclass
+from . import Registers
+from Decoder import Instruction
+@dataclass
 class Process:
-    def __init__(self, data: List[Instruction], registers: Registers):
-        self.data = data
-        self.registers = registers
-    
+    data: List[Instruction]
+    registers: Registers
+    @property
+    def DATA(self):
+        return self.data
+    @property
+    def REGISTERS(self):
+        return self.registers

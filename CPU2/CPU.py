@@ -29,8 +29,16 @@ class CPU:
                 input(i.items())
             case Interrupt(name="DMAFatalError"):
                 print("DMA failed due to fatal error.")
-            case Interrupt(name="DMAIndexOutOfBounds"):
+            case Interrupt(name="DMAIndexOutOfBounds"): #This is also a type of Page Fault
                 print("DMA failed! Entry does not exist.")
+            case Interrupt(name="ProcessTooLarge"):
+                print("Process too large to fit in the cache!")
+            case Interrupt(name="CacheBottleneck"):
+                #When a CacheBottleneck occurs, we need some way
+                #to queue the process that triggered it to enter as soon as enough
+                #space and other processes that have raised this interrupt
+                #have had their time with the CPU.
+                print("Not enough space to fit"f" {i.data} right now.")
     #Execute: Instruction -> EFFECT!
     #Purpose: Attempts to execute the given instruction, making use
     #of the Decoder in opcode_parser.py to decode the instruction

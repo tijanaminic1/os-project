@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from . import Registers, Decoder, Interrupt, Memory, ReadyQueue
+from . import Registers, Decoder, Interrupt, Memory, ReadyQueue, Cache, RAM
 from Decoder import Instruction, InstructionError
 from ReadyQueue import CustomThread, Scheduler, ReadyQueue
 @dataclass
@@ -7,8 +7,8 @@ class CPU:
 
     registers: Registers
     decoder: Decoder
-    cache: Memory
-    RAM: Memory
+    cache: Cache
+    RAM: RAM
     #fetch: int -> Instruction
     #purpose: gets the instruction stored at the given memory location
     def fetch(self, address)-> Instruction:

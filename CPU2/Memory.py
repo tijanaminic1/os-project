@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List, Literal, TypeVar, Generic, Tuple
+from typing import List, Literal, TypeVar, Generic, Tuple, Dict
 from collections.abc import Iterable
-from . import Interrupt
+from . import Interrupt, Instruction, Process, Program
 #Purpose: Move memory from the start list to the end list
 #def DMA(start:List,end:List):
 #Implement later
@@ -91,23 +91,39 @@ class Cache(Memory):
                 inputsegment+=1
                 memorylocations.append(block)
         raise Interrupt(name="PassAllocationData",data=memorylocations)
+class RAM(Memory):
+    def __init__(self,data_matrix:Dict[int,Program]):
+        self.data = data_matrix
+        self.size = len(self.data)
+    #get: str -> Program
+    #Purpose: To get the process id out of RAM
+    def read(self, PROCESS_ID: int)->Program:
+        try:
+            return self.data[PROCESS_ID]
+        except KeyError:
+            raise Interrupt("SegmentationFault")
+    #load: Program -> Effect!
+    #Purpose: To write a new program into the RAM
+    def write(self, program: Program):
+        self.data[len(self.data)] = program
+    #free: int -> Effect!
+    #Purpose: To free up the RAM memory
+    def free(self,PROCESS_ID:int):
+        self.data.discard(PROCESS_ID)
 #DMA: Memory, memory operation, start index (optional), data (optional)
 #Purpose: Performs direct memory access according to a given predicate (operation)
 #Effect!: Potentially modifies memory.
 @staticmethod
 def DMA(sender: object, memory: Memory, operation="", start=-1, data=None):
     if start == -1:
-        return Interrupt("DMAFatalError")
-    match operation:
-        case "read":
-            try:
+        raise Interrupt("DMAFatalError",data=sender)
+    try:
+        match operation:
+            case "read":
                 return memory.read(start)
-            except IndexError:
-                return Interrupt("DMAIndexOutOfBounds")
-        case "write":
-            try:
+            case "write":
                 memory.write(start,data)
-            except IndexError:
-                return Interrupt("DMAIndexOutOfBounds")
-        case _:
-            return Interrupt("DMAFatalError")
+            case _:
+                raise Interrupt("DMAFatalError",data=sender)
+    except IndexError:
+        raise Interrupt("DMAIndexOutOfBounds",data=sender)

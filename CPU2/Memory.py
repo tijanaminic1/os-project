@@ -61,7 +61,7 @@ class Cache(Memory):
     #free: int -> Effect!
     #purpose: Frees a block of memory.
     def free(self,arg:int):
-        for index in range(self.block_size*arg,self.block_size*(arg+1)):
+        for index in range(self.blockify(arg),self.blockify(arg)):
             self.data[index] = None
     #allocable: int -> int or Interrupt
     #Purpose: Given a size of a set of instructions,

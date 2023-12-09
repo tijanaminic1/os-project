@@ -12,7 +12,6 @@ class CPU:
     decoder: Decoder
     cache: Cache
     RAM: RAM
-
     #fetch: int -> Instruction
     #purpose: gets the instruction stored at the given memory location
     def fetch(self, address)-> Instruction:

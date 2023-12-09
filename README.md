@@ -1,21 +1,22 @@
 The project seeks to emulate a basic computer system.
---TODO:
-Memory: Luca
-DMA: Luca
-Interrupts: Luca
 
-Multithreading/Multiprogramming: Luca/Tijana
+MILESTONES FOR FINAL EXAM:
+Task A: Scheduling Algorithms Simulator (Module 6 and Module 4)
+1. First Come First Serve (FCFS) [Work_In_Progress_See_/Scheduling/FCFS.py]
+2. Round Robin (RR)
+3. Shortest Remaining Time First (SRTF)
+4. Shortest Job First (SJF)
+5. Highest Ratio Next (HRRN)
+6. Custom Algorithm (???)Task B: The CPU Timer
 
-Mutual Exclusion/Synchronization: Tijana
-
-Advanced Simulation Scenarios: Eric
-
-Meeting: Saturday 11/4 6pm
-Meeting: Sunday 11/5 Afternoon (TBD)
-
-Going plan for now is to implement an object called Process,
-which is taken into a multithreading process handler, which
-then goes to the cpu.
+Task B: CPU Timer (Needed for testing of Task A)
+ 
+Task C: Implementing detailed RAM paging
+ 
+Finally, And Most IMPORTANTLY:
+Unit Tests
+Property Tests
+Behavior Tests
 
 Requirements to run code within this project:
 Python v 3.10 or higher

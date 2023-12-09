@@ -1,8 +1,8 @@
 from threading import Thread, Lock
 from typing import List
 import threading
-from . import Process
-
+from Process import Process
+from Interrupt import Interrupt
 class BooleanLock:
     def __init__(self):
         self.lock = Lock()
@@ -12,10 +12,6 @@ class IntLock:
     def __init__(self, data: int):
         self.lock = Lock()
         self.value = data
-
-class ThreadPoolException(Exception):
-    pass
-
 class CustomThread(threading.Thread):
     def __init__(self, execute: BooleanLock, runnables: List[Process]):
         super().__init__()
@@ -39,7 +35,6 @@ class ThreadPool:
     def execute(self, process: Process):
         with self.numAvailable.lock:
             if(self.numAvailable.value <= 0):
-                raise ThreadPoolException
+                raise Interrupt("ThreadPoolException")
             else:
-                
-        pass
+                pass

@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from Decoder import Instruction, InstructionError
-from ..InstructionArchitecture import Instruction, Process
+from . import Decoder, Registry
+from ..InstructionArchitecture import Instruction, Process, Program, InstructionError
 from ..Threads import CustomThread, Scheduler, ReadyQueue
 from ..Memory import Memory, Cache, RAM
-from . import Registry, Decoder
-from ..Interrupt import Interrupt
+from ..Interrupt import Interrupt, InterruptStack
 @dataclass
 class CPU:
 
@@ -21,7 +20,7 @@ class CPU:
     #effects, and locates its operands
     def decode(self,inst: Instruction)->(str,function,list):
         return self.decoder.decode(inst)
-      #Execute: Instruction -> EFFECT!
+    #Execute: Instruction -> EFFECT!
     #Purpose: Attempts to execute the given instruction, making use
     #of the Decoder in opcode_parser.py to decode the instruction
     #EFFECT!: Based off of the given Instruction, code will be executed
@@ -66,13 +65,13 @@ class CPU:
             case "AND"|"OR"|"NOR"|"XOR"|"NAND"|"ADD"|"SUB"|"DIV"|"MUL": #handle boolean statements
                 execute_instruction()
             case "RET":
-                pass
+                NotImplemented
             case "NOP":
                 pass #does nothing, as intended.
             case "PRINT":
-                self.interruptHandler(Interrupt(name="PRINT",data=operands[2]))
+                Interrupt.HANDLE(Interrupt(name="PRINT",data=operands[2]))
             case "INPUT":
-                self.interruptHandler(Interrupt(name="INPUT",data=operands[2]))
+                Interrupt.HANDLE(Interrupt(name="INPUT",data=operands[2]))
             case _:
                 raise InstructionError
         #if we're performing a jump operation do the following:

@@ -20,4 +20,7 @@ class Scheduler(ABC):
         boiler plate for adding a process to the scheduler
         """
         pass
+    @abstractmethod
+    def remove_process(self):
+        pass
     #TODO: add any boiler plate functionality that you want

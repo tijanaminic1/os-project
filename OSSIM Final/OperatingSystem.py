@@ -3,7 +3,9 @@ from .Memory import RAM, Cache
 from .InstructionArchitecture import InstructionError
 from .Interrupt import InterruptStack, Interrupt
 from .Threads import *
-from .Scheduling import SchedulerTemplate, CPUTimer
+from .Scheduling.SchedulerTemplate import Scheduler
+from .Scheduling.CPUTimer import CPUTimer
+from .Scheduling.FCFSScheduler import FCFSScheduler
 from dataclasses import dataclass
 
 
@@ -18,7 +20,6 @@ class OperatingSystem:
     interrupt_stack: InterruptStack
     cpu_timer: CPUTimer
     scheduler: Scheduler
-
     def load_programs(self, programs):
         # Load programs into memory
         for program in programs:
@@ -61,3 +62,4 @@ class OperatingSystem:
 #Scheduling
 #into a complete Operating System Simulator.
 
+my_os = OperatingSystem(scheduler=FCFSScheduler([]))

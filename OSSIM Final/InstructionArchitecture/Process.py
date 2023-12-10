@@ -6,6 +6,7 @@ from .Instruction import Instruction
 class Process:
     data: List[Instruction]
     registers: Registry
+    current_instruction: int=0
     @property
     def DATA(self):
         return self.data
@@ -13,4 +14,4 @@ class Process:
     def REGISTERS(self):
         return self.registers
     def __len__(self):
-        return len(self.data)#size of process
+        return sum(len(i) for i in self.data)#size of process is the sum of the costs of each instruction.

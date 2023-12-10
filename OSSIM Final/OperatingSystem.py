@@ -22,7 +22,7 @@ class OperatingSystem:
     def load_programs(self, programs):
         # Load programs into memory
         for program in programs:
-            self.memory.load_program(program)
+            self.ram.load_program(program)
 
     def run(self):
         # Main simulation loop

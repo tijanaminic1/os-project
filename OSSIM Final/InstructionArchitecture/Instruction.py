@@ -5,8 +5,6 @@
 #You could call this an assembler compiler,
 #Decoder, or Disassembler depending on your
 #desired nomenclature.
-class InstructionError(Exception):
-    pass
 class Instruction:
     #default constructor
     def __init__(self):

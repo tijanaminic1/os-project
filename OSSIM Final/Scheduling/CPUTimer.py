@@ -11,7 +11,9 @@ import time
 
 class CPUTimer:
     def __init__(self):
+        self.global_time = time.perf_counter_ns()
         self.timer = 0 #sets the timer to 0
+
     def start(self):
         self.timer = time.perf_counter_ns() #starts timer
         return self.timer #returns the start time
@@ -20,9 +22,14 @@ class CPUTimer:
     def out(self):
         timeElaspsed = time.perf_counter_ns() - self.timer #subtracts the current time from the start time to find the amount of time passed
         return timeElaspsed #returns the amount of passed time
-    def reset(self): #write a test file and test the timer when done pls
+    def reset(self):
         self.time = 0
-
+    def turnaround_time(self):
+        pass
+    def burst_time(self):
+        pass
+    def waiting_time(self):
+        pass
 
 
 

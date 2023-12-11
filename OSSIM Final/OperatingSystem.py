@@ -1,4 +1,4 @@
-from .CentralProcessor import CPU
+from .CentralProcessor import CPU, Decoder, Registry
 from .Memory import RAM, Cache
 from .InstructionArchitecture import InstructionError
 from .Interrupt import InterruptStack, Interrupt
@@ -7,7 +7,7 @@ from .Scheduling.SchedulerTemplate import Scheduler
 from .Scheduling.CPUTimer import CPUTimer
 from .Scheduling.FCFSScheduler import FCFSScheduler
 from dataclasses import dataclass
-
+import copy
 
 #NOTE: This is a barebones implementation of the operating system
 #This is supposed to serve as a roadmap to aid in the programming of
@@ -17,6 +17,12 @@ class OperatingSystem:
     ram: RAM
     cache: Cache
     cpu: CPU
+    monitor: CPU = CPU(registers=Registry(), 
+                       decoder=Decoder(), 
+                       cache=copy.copy(cpu.cache), 
+                       RAM=copy.copy(cpu.RAM))#A monitor is an inferior CPU with its own registers and instruction set
+                        #But it accesses the same memory as the main CPU.
+                        #Its purpose is to perform clerical tasks such as scheduling 
     interrupt_stack: InterruptStack
     cpu_timer: CPUTimer
     scheduler: Scheduler
@@ -47,6 +53,9 @@ class OperatingSystem:
         except KeyboardInterrupt:
             # Handle keyboard interrupt gracefully
             print("Simulation interrupted. Exiting.")
+        except Interrupt as i:
+            self.interrupt_stack.push(i)
+            InterruptStack.HANDLESTACK(self.interrupt_stack)
 
     def display_statistics(self):
         # Display statistics from the CPU timer

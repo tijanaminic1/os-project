@@ -36,4 +36,4 @@ def HANDLE(interrupt: Interrupt):
         case Interrupt(name="ProcessTooLarge"):#TODO: Generally a fatal error, unless we do VRAM.
             print("Process too large to fit in the cache!")
         case Interrupt(name="CacheBottleneck"):#TODO: Integrate this with scheduling algorithm. It is a scheduling issue.
-            print("Not enough space to fit"f" {i.data} right now.")
+            print("Not enough space to fit"f" {interrupt.data} right now.")

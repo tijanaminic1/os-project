@@ -30,3 +30,7 @@ class Process:
     #Essential for context switching.
     def save_state(self, a_registry):
         self.registers=a_registry
+    #Purpose: Gets the estimated time remaining for a job.
+    @property
+    def remaining_time(self):
+        return len(self) - self.registers["PC"]

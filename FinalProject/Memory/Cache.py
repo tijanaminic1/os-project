@@ -1,27 +1,27 @@
 from dataclasses import dataclass
-from typing import List, Literal, TypeVar, Generic, Tuple, Dict
+from typing import List, TypeVar, Tuple
 from collections.abc import Iterable
 from ..Interrupt import Interrupt
 from . import Memory
-
-T = TypeVar['T']
+from ..InstructionArchitecture.Instruction import Instruction
+from ..InstructionArchitecture.Process import Process
 @dataclass
 class Cache(Memory):
     partitions: int = 16
     size: int = partitions*16
-    data: List[T] = [None]*size
+    data: List[Instruction] = [None]*size
     block_size: int = size//partitions
 
     #fetch: int -> sublist(data)
     #Purpose: returns a particular block of memory in the cache data
-    def fetch(self,arg:int)->List[T]:
+    def fetch(self,arg:int)->List[Instruction]:
         start,end = self.blockify(arg)
         return self.data[start:end]
     #fetch_blocks: iterable(blocks) -> List
     #Purpose: returns a list of blocks (partitions) in the order
     #the relative indices (blocks) were received
 
-    def fetch_blocks(self, *args:Iterable[int])->List[T]:
+    def fetch_blocks(self, *args:Iterable[int])->List[Instruction]:
         return [self.fetch(partition) for partition in args]
     #blockify: size -> Tuple[Int,Int]
     #Purpose: Returns a Tuple that represents a block's start index, and its end index+1
@@ -56,7 +56,7 @@ class Cache(Memory):
     #returns an Interrupt if the set of instructions is too
     #large to be processed, or an integer relating to the
     #amount
-    def allocable(self,data_size: int):
+    def allocable(self,data_size: Process):
         space_needed = (len(data_size)/self.block_size)
         if space_needed > self.partitions:
             raise Interrupt("ProcessTooLarge")
@@ -64,9 +64,9 @@ class Cache(Memory):
             return False
         else:
             return True
-    #allocate: List -> Effect!
+    #allocate: Process -> Effect!
     #Purpose: Allocates the given memory info if it can, otherwise raises an Interrupt    
-    def allocate(self,input:List[T]):
+    def allocate(self,input:Process):
         if not self.allocable(len(input)):
             raise Interrupt("CacheBottleneck")
         allocatehere = [block for block in range(self.block_size) if self.check(block)]
@@ -75,3 +75,4 @@ class Cache(Memory):
             start,end = self.blockify(i) 
             self.set_block(block,input[start:end])#Effect!: data[i]
             block+=1#Effect! block is incremented
+        input.setPARTITIONS(allocatehere)

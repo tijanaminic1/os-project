@@ -1,35 +1,48 @@
 from . import Memory
-from ..InstructionArchitecture import Program
+from ..InstructionArchitecture.Program import Program
 from ..Interrupt import Interrupt
+from typing import List
+
+#By using dictionaries, memory is dynamically alloated across RAM
+#and accessed via relative indexing.
+#This creates an easy implementation of dynamic partitioning
+#To see what static partitions look like, view Cache.
 class RAM(Memory):
-    def __init__(self, size):
-        self.data = [None] * size  # Initializing RAM with a given size
-
-    def read(self, address):
-        # Add error handling for out-of-bounds access
-        return self.data[address]
-
-    def write(self, address, value):
-        # Add error handling for out-of-bounds access
-        self.data[address] = value
-
-    # Additional methods like allocation, deallocation can be added
-class RAM(Memory):
-    def __init__(self,data_matrix:Dict[int,Program]):
+    #ASSUMPTION: Init is called with a value 
+    def __init__(self, data_matrix: List[Program]):
         self.data = data_matrix
-        self.size = len(self.data)
+        self.size = sum(len(value) for value in self.data)
+        self.capacity = self.size*16 if self.size>4096 else 4096
+        self.pid_key = 0
     #get: str -> Program
     #Purpose: To get the process id out of RAM
     def read(self, PROCESS_ID: int)->Program:
         try:
             return self.data[PROCESS_ID]
         except KeyError:
-            raise Interrupt("SegmentationFault")
+            raise Interrupt("PageFault")
     #load: Program -> Effect!
     #Purpose: To write a new program into the RAM
     def write(self, program: Program):
-        self.data[len(self.data)] = program
+        program_size = len(program)
+        if self.size+program_size > self.capacity:
+            raise Interrupt("RAMCapacityWarning")
+        else:
+            self.data[len(self.data)] = program
+            self.size+=program_size
     #free: int -> Effect!
     #Purpose: To free up the RAM memory
     def free(self,PROCESS_ID:int):
-        self.data.discard(PROCESS_ID)
+        try:
+            self.size -= self.data[PROCESS_ID]
+            del self.data[PROCESS_ID]
+        except KeyError:
+            raise Interrupt("PageFault")
+    
+    #clear: -> Effect!
+    #Purpose: clears the entire RAM.
+    def clear(self):
+        self.data = {}
+    
+    def __iter__(self):
+        return iter(self.data)

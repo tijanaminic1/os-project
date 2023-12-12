@@ -10,3 +10,8 @@ class Program:
 
     def reference(self, varname: str):
         return self.bindings.get(varname)
+    
+    #The size of a program is the size of all of the subprocesses
+    #inside that program.
+    def __len__(self):
+        return sum(len(process) for process in self.data)

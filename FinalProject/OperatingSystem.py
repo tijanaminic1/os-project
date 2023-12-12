@@ -1,6 +1,6 @@
 from .CentralProcessor import CPU, Decoder, Registry
-from .Memory import RAM, Cache
-from .InstructionArchitecture import InstructionError
+from .Memory import RAM, Cache, DMA
+from .InstructionArchitecture import InstructionError, Process
 from .Interrupt import InterruptStack, Interrupt
 from .Threads import *
 from .Scheduling.SchedulerTemplate import Scheduler
@@ -14,61 +14,51 @@ import copy
 #the operating system.
 @dataclass
 class OperatingSystem:
-    ram: RAM
-    cache: Cache
-    cpu: CPU
-    monitor: CPU = CPU(registers=Registry(), 
-                       decoder=Decoder(), 
-                       cache=copy.copy(cpu.cache), 
-                       RAM=copy.copy(cpu.RAM))#A monitor is an inferior CPU with its own registers and instruction set
-                        #But it accesses the same memory as the main CPU.
-                        #Its purpose is to perform clerical tasks such as scheduling 
-    interrupt_stack: InterruptStack
-    cpu_timer: CPUTimer
-    scheduler: Scheduler
-    def load_programs(self, programs):
-        # Load programs into memory
-        for program in programs:
-            self.ram.load_program(program)
+    cpu: CPU=CPU(registers=Registry(),decoder=Decoder())
+    ram: RAM=RAM()
+    cache: Cache=Cache()
+    scheduler: Scheduler=FCFSScheduler()
+    interrupt_stack: InterruptStack=InterruptStack()
+    dma: DMA=DMA()
+    timer: CPUTimer=CPUTimer()
+    processes: List[Process] = field(default_factory=list)
+
+    def boot(self):
+        # Initialize system components
+        self.initialize_components()
+
+    def initialize_components(self):
+        # Set up CPU, RAM, Cache, etc.
+        pass
 
     def run(self):
-        # Main simulation loop
-        try:
-            while True:
-                # Get a list of processes from the scheduler
-                processes_to_execute = self.scheduler.schedule()
+        # Main loop to run the operating system
+        while True:
+            self.handle_interrupts()
+            process = self.scheduler.get_next_process()
+            if process:
+                self.execute_process(process)
 
-                # Load processes into the CPU
-                self.cpu.load_processes(processes_to_execute)
+    def handle_interrupts(self):
+        # Check and handle any pending interrupts
+        if self.interrupt_stack:
+            self.interrupt_stack.HANDLESTACK()
 
-                # Start CPU timer
-                self.cpu_timer.start()
+    def execute_process(self, process: Process):
+        # Execute the given process
+        self.timer.start()
+        # Process execution logic
+        self.timer.stop()
+        # Update process and system statistics
 
-                # Execute processes
-                self.cpu.execute()
+    def load_process(self, process: Process):
+        # Add a new process to the system
+        self.processes.append(process)
+        self.scheduler.add_process(process)
 
-                # Stop CPU timer
-                self.cpu_timer.stop()
+    def terminate_process(self, process: Process):
+        # Terminate a given process
+        self.processes.remove(process)
+        self.scheduler.remove_process(process)
 
-        except KeyboardInterrupt:
-            # Handle keyboard interrupt gracefully
-            print("Simulation interrupted. Exiting.")
-        except Interrupt as i:
-            self.interrupt_stack.push(i)
-            InterruptStack.HANDLESTACK(self.interrupt_stack)
-
-    def display_statistics(self):
-        # Display statistics from the CPU timer
-        print("Turnaround Time:", self.cpu_timer.turnaround_time())
-        print("Burst Time:", self.cpu_timer.burst_time())
-        print("Waiting Time:", self.cpu_timer.waiting_time())
-
-#TODO: Full integration of project folders:
-#CentralProcessor
-#InstructionArchitecture
-#Interrupt
-#Therads
-#Scheduling
-#into a complete Operating System Simulator.
-
-my_os = OperatingSystem(scheduler=FCFSScheduler([]))
+    # Additional methods for DMA operations, memory management, etc.

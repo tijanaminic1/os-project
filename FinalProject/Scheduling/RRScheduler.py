@@ -1,36 +1,23 @@
 from SchedulerTemplate import Scheduler
 from typing import List
 from ..InstructionArchitecture.Process import Process
-
+from queue import Queue
 #https://docs.python.org/3/library/itertools.html
 #cycle
-class RRScheduler:
-    def __init__(self, processes: List[Process] = []):
-        self.processes = processes
+class RRScheduler(Scheduler):
+    def __init__(self, time_slice: float):
+        self.ready_queue = Queue()
+        self.time_slice = time_slice
 
-    def RR(self, time_quantum: int):
-        processes = self.processes.copy()  # Make a copy to avoid modifying the original list
-        time = 0
-        waiting_time = 0
-        turnaround_time = 0
+    def add_process(self, process: Process):
+        self.ready_queue.put(process)
 
-        while processes:
-            current_process = processes[0]
+    def get_next_process(self):
+        return self.ready_queue.get() if not self.ready_queue.empty() else None
 
-            if current_process.remaining_time <= time_quantum:
-                time += current_process.remaining_time
-                turnaround_time += time
-                waiting_time += turnaround_time - current_process.burst_time
-                processes.pop(0)
-            else:
-                time += time_quantum
-                current_process.remaining_time -= time_quantum
-                processes.append(current_process)
-                processes.pop(0)
+    def should_preempt(self, current_process: Process, elapsed_time: float) -> bool:
+        return elapsed_time >= self.time_slice
 
-        avg_waiting_time = waiting_time / len(self.processes)
-        avg_turnaround_time = turnaround_time / len(self.processes)
-                
         
 
 

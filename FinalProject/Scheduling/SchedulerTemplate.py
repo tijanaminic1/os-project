@@ -1,26 +1,15 @@
 from abc import ABC, abstractmethod
+from queue import Queue
 
 class Scheduler(ABC):
     @abstractmethod
-    def get_schedule(self):
-        """
-        Implement the scheduling logic to determine the order of execution for processes.
-        This method should return a list of processes to be executed.
-        """
+    def add_process(self, process: Process):
         pass
+
     @abstractmethod
-    def current(self):
-        """
-        you can use this to get the current Process that needs to be executed
-        """
+    def get_next_process(self):
         pass
+
     @abstractmethod
-    def add_process(self,new_process):
-        """
-        boiler plate for adding a process to the scheduler
-        """
+    def should_preempt(self, current_process: Process, elapsed_time: float) -> bool:
         pass
-    @abstractmethod
-    def remove_process(self):
-        pass
-    #TODO: add any boiler plate functionality that you want

@@ -1,38 +1,23 @@
 import time
-#need four methods:
-#start(self)
-    #starts timer from current time
-#stop(self)
-    #stops (pauses) timer
-#out(self)
-    #prints the current time elapsed.
-#reset(self)
-    #resets the timer at 0
 
 class CPUTimer:
     def __init__(self):
-        self.global_time = time.perf_counter_ns()
-        self.timer = 0 #sets the timer to 0
+        self.start_time = 0
+        self.end_time = 0
+        self.total_executed_time = 0  # Total time for which processes have been executed
 
     def start(self):
-        self.timer = time.perf_counter_ns() #starts timer
-        return self.timer #returns the start time
+        self.start_time = time.time()
+
     def stop(self):
-        self.timer.sleep() #puts timer to sleep
-    def out(self):
-        timeElaspsed = time.perf_counter_ns() - self.timer #subtracts the current time from the start time to find the amount of time passed
-        return timeElaspsed #returns the amount of passed time
-    def reset(self):
-        self.time = 0
-    def turnaround_time(self):
-        pass
-    def burst_time(self):
-        pass
-    def waiting_time(self):
-        pass
+        self.end_time = time.time()
+        self.total_executed_time += self.end_time - self.start_time
 
+    def get_burst_time(self):
+        return self.end_time - self.start_time
 
+    def get_total_executed_time(self):
+        return self.total_executed_time
 
-
-
-
+    # Other methods for calculating waiting time, turnaround time, etc.,
+    # depending on how you track process arrival and completion

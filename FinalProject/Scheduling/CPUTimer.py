@@ -1,23 +1,39 @@
-import time
+from time import time
+from dataclasses import dataclass, field
+from typing import Dict
+from ..InstructionArchitecture.Process import Process
+@dataclass
+class ProcessTimeMetrics:
+    arrival_time: float
+    start_time: float = 0.0
+    end_time: float = 0.0
+    total_run_time: float = 0.0  # Total time the process has been running
 
 class CPUTimer:
     def __init__(self):
-        self.start_time = 0
-        self.end_time = 0
-        self.total_executed_time = 0  # Total time for which processes have been executed
+        self.metrics: Dict[int, ProcessTimeMetrics] = {}
 
-    def start(self):
-        self.start_time = time.time()
+    def add_process(self, process: Process):
+        self.metrics[process.id] = ProcessTimeMetrics(arrival_time=time())
 
-    def stop(self):
-        self.end_time = time.time()
-        self.total_executed_time += self.end_time - self.start_time
+    def start(self, process: Process):
+        if self.metrics[process.id].start_time == 0:
+            self.metrics[process.id].start_time = time()
 
-    def get_burst_time(self):
-        return self.end_time - self.start_time
+    def stop(self, process: Process):
+        current_time = time()
+        metrics = self.metrics[process.id]
+        if metrics.start_time != 0:
+            metrics.total_run_time += current_time - metrics.start_time
+            metrics.end_time = current_time
 
-    def get_total_executed_time(self):
-        return self.total_executed_time
+    def get_wait_time(self, process: Process) -> float:
+        metrics = self.metrics[process.id]
+        return metrics.start_time - metrics.arrival_time
 
-    # Other methods for calculating waiting time, turnaround time, etc.,
-    # depending on how you track process arrival and completion
+    def get_turnaround_time(self, process: Process) -> float:
+        metrics = self.metrics[process.id]
+        return metrics.end_time - metrics.arrival_time
+
+    def get_total_run_time(self, process: Process) -> float:
+        return self.metrics[process.id].total_run_time

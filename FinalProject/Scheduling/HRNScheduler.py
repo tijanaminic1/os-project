@@ -1,6 +1,7 @@
 from .SchedulerTemplate import Scheduler
 from ..InstructionArchitecture.Process import Process
 import time
+from CPUTimer import CPUTimer
 class HRNScheduler(Scheduler):
     def __init__(self, timer: CPUTimer):
         self.ready_queue = []

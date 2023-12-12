@@ -1,20 +1,20 @@
 from dataclasses import dataclass
 from . import Decoder, Registry
-from ..InstructionArchitecture import Instruction, Process, Program, InstructionError
+from ..InstructionArchitecture import Instruction, InstructionError
 from ..Threads import CustomThread, Scheduler, ReadyQueue
 from ..Memory import Memory, Cache, RAM
 from ..Interrupt import Interrupt, InterruptStack
 @dataclass
 class CPU:
-
     registers: Registry
     decoder: Decoder
-    cache: Cache
-    RAM: RAM
     #fetch: int -> Instruction
     #purpose: gets the instruction stored at the given memory location
-    def fetch(self, address)-> Instruction:
-        return self.decoder.fetch(self.cache, address)
+    def fetch(self, address: int, memory: Memory)-> Instruction:
+        try:
+            return self.decoder.fetch(memory, address)
+        except Interrupt("CacheMiss"):
+            raise Interrupt ("CacheMiss")
     #decode: Instruction -> Tuple
     #purpose: Decodes an instruction into its mnemonic, 
     #effects, and locates its operands

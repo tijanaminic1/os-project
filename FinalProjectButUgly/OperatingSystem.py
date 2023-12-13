@@ -27,23 +27,39 @@ from queue import Queue
 #Prettiness Imports
 from dataclasses import dataclass, field
 from typing import List, Optional
-@dataclass
 class OperatingSystem:
-    cpu: CPU
-    ram: RAM
-    cache: Cache
-    scheduler: Scheduler
-    interrupt_stack: InterruptStack
-    dma: DMA
-    processes: List[Process] = field(default_factory=list)
-    process_queue: Queue = field(default_factory=Queue)
-    current_process: Optional[Process] = None
-    timer: CPUTimer = field(default_factory=CPUTimer)
-    lock: Lock = field(default_factory=Lock)
-
-    def __post_init__(self):
+    def __init__(self, cpu, ram, cache, scheduler, interrupt_stack, dma, processes=None, inputs=None):
+        self.cpu = cpu
+        self.ram = ram
+        self.cache = cache
+        self.scheduler = scheduler
+        self.interrupt_stack = interrupt_stack
+        self.dma = dma
+        self.processes = processes if processes is not None else []
+        self.inputs = inputs if inputs is not None else []
+        self.process_queue = Queue()
+        self.current_process = None
+        self.timer = CPUTimer()
+        self.lock = Lock()
         self.thread = Thread(target=self.run, daemon=True)
+        self.initialize_system()
 
+    def initialize_system(self):
+        # Load programs and their processes into RAM
+        for program in self.inputs:
+            for process in program.data:
+                self.load_process_to_ram(process)
+    def initialize_system(self):
+        for program in self.inputs:
+            for process in program.data:
+                self.load_process_to_ram(process)
+    def load_process_to_ram(self, process: Process):
+        try:
+            self.ram.write(process)
+        except Interrupt as e:
+            print(f"Error loading process to RAM: {e}")
+            return
+        self.processes.append(process)
     def start(self):
         self.thread.start()
 
@@ -56,12 +72,21 @@ class OperatingSystem:
                 self.process_queue.task_done()#mark the task as complete
             self.lock.release() #lock released by program after execution completes.
 
-    def load_process(self, process: Process):#Why are both run() and load_process() managing the Lock()?
-        self.lock.acquire()#acquire the lock
-        self.processes.append(process)#append the process to the processes
-        self.scheduler.add_process(process)#schedule the process
-        self.process_queue.put(process)#add the process to the process_queue
-        self.lock.release()#release the lock
+    def load_process(self, process: Process):
+        # Load process from RAM to Cache before execution
+        if self.cache.allocable(len(process)):  # Check if cache has space
+            try:
+                self.cache.allocate(process)  # Load process to cache
+                # Continue with existing load_process logic
+                self.lock.acquire()  # Acquire the lock
+                self.processes.append(process)  # Append the process to the processes
+                self.scheduler.add_process(process)  # Schedule the process
+                self.process_queue.put(process)  # Add the process to the process_queue
+                self.lock.release()  # Release the lock
+            except Interrupt as e:
+                print(f"Error loading process to Cache: {e}")
+        else:
+            print("Not enough space in cache")
 
     def context_switch(self, process: Process):
         if self.current_process:#If current_process is a Process

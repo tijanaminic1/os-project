@@ -9,7 +9,7 @@ from typing import List
 #To see what static partitions look like, view Cache.
 class RAM(Memory):
     #ASSUMPTION: Init is called with a value 
-    def __init__(self, data_matrix: List[Program]):
+    def __init__(self, data_matrix: List[Program]=[]):
         self.data = {}
         for val in range(len(data_matrix)):
             self.data[val] = data_matrix[val]
@@ -17,7 +17,7 @@ class RAM(Memory):
         self.capacity = self.size*16 if self.size>4096 else 4096
     def __post_init__(self):
         for k in self.data.keys():
-            setparent(self.data[k],k)
+            set_address_space(self.data[k],k)
     #get: str -> Program
     #Purpose: To get the process id out of RAM
     def read(self, PROCESS_ID: int)->Program:
@@ -32,7 +32,7 @@ class RAM(Memory):
         if self.size+program_size > self.capacity:
             raise Interrupt("RAMCapacityWarning")
         else:
-            setparent(program,len(self.data))
+            set_address_space(program,len(self.data))
             self.data[len(self.data)] = program
             self.size+=program_size
     #free: int -> Effect!
@@ -52,5 +52,5 @@ class RAM(Memory):
     def __iter__(self):
         return iter(self.data)
 @staticmethod
-def setparent(p: Program,parent_id):
+def set_address_space(p: Program,parent_id):
     p.set_address_space(parent_id)

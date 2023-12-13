@@ -1,15 +1,15 @@
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 @dataclass
-class Registry:
-    A: int
-    B: int
-    C: int
-    D: int
-    E: int
-    F: int
-    PC: int
-    SP: int
+class Registry(MutableMapping):
+    A: int = 0
+    B: int = 0
+    C: int = 0
+    D: int = 0
+    E: int = 0
+    F: int = 0
+    PC: int = 0
+    SP: int = 0
     #values: -> List(Registers)
     #Purpose: returns the registers as an iterable (list)
     def values(self):

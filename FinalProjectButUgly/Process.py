@@ -1,13 +1,13 @@
 from typing import List, Any, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from Registry import Registry
 from Instruction import Instruction
 @dataclass
 class Process:
-    data: List[Instruction]
-    registers: Registry
+    data: List[Instruction] = field(default_factory=list)
+    registers: Registry = field(default_factory=Registry)
     end = 0 
-    partitions: List[int]#List of partitions the created process occupies. determined later.
+    partitions: List[int] = field(default_factory=list)#List of partitions the created process occupies. determined later.
     parent = None
     def __post_init__(self):
         self.end = sum(len(i) for i in self.data)
@@ -43,7 +43,7 @@ class Process:
         return self.registers["PC"]
     def execution_completed(self):
         return self.remaining_time()==0
-    def setparent(self, parent_id):
+    def set_address_space(self, parent_id):
         self.parent = parent_id
     def get_parent(self):
         return self.parent

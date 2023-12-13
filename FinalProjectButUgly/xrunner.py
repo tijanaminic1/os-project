@@ -9,29 +9,44 @@ from HRNScheduler import HRNScheduler as HRRN
 from RRScheduler import RRScheduler as RR
 from SJFScheduler import SJFScheduler as SJF
 from STRScheduler import STRScheduler as STR
-# Example instructions
-add_instruction = Instruction("ADD", 5, 3)  # Adds 5 and 3
-sub_instruction = Instruction("SUB", 10, 2) # Subtracts 2 from 10
-mul_instruction = Instruction("MUL", 4, 2)  # Multiplies 4 and 2
-div_instruction = Instruction("DIV", 20, 5) # Divides 20 by 5
-jmp_instruction = Instruction("JLE", 0)     # Jump to the beginning
-nop_instruction = Instruction("NOP")        # Does nothing
+from InterruptStack import InterruptStack
+from CPU import CPU
+from RAM import RAM
+from Cache import Cache
+from DMA import DMA
+from CPUTimer import CPUTimer
+from Decoder import Decoder
+from Registry import Registry
 
-# Process with simple arithmetic operations
-process1 = Process([add_instruction, sub_instruction, nop_instruction])
+# Create instances of each scheduler
+fcfs_scheduler = FCFS()
+rr_scheduler = RR(time_slice=1.0)  # Example time slice
+sjf_scheduler = SJF()
+hrn_scheduler = HRRN(timer=CPUTimer())
+str_scheduler = STR()
 
-# Process with more complex operations
-process2 = Process([mul_instruction, div_instruction, jmp_instruction, nop_instruction])
+# Sample program and processes
+process1 = Process(data=[Instruction("ADD", 5, 3), Instruction("SUB", 10, 2), Instruction("NOP")])
+process2 = Process(data=[Instruction("MUL", 4, 2), Instruction("DIV", 20, 5), Instruction("JMP", 0), Instruction("NOP")])
+process3 = Process(data=[Instruction("ADD", 5, 3), Instruction("MUL", 4, 2), Instruction("DIV", 20, 5), Instruction("NOP")])
+program = Program([process1, process2, process3])
 
-# Process with mixed operations
-process3 = Process([add_instruction, mul_instruction, div_instruction, nop_instruction])
 
 # Define a program with multiple processes
-program = Program([process1, process2, process3])
+program1 = copy.deepcopy(program)
 program2 = copy.deepcopy(program)
 program3 = copy.deepcopy(program)
 program4 = copy.deepcopy(program)
 program5 = copy.deepcopy(program)
 
+os_fcfs = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=fcfs_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program1])
+os_rr = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=rr_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program2])
+os_sjf = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=sjf_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program3])
+os_hrn = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=hrn_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program4])
+os_str = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=str_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program5])
 if __name__ == "__main__":
-    fcfs = OS(cpu=CPU(), ram=RAM(),cache=Cache(),scheduler=FCFS(),interrupt_stack=InterruptStack(),dma=DMA(),processes=[],)
+    os_fcfs.start()
+    #os_rr.start()
+    #os_sjf.start()
+    #os_hrn.start()
+    #os_str.start()

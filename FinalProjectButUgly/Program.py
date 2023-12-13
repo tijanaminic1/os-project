@@ -1,15 +1,14 @@
 from typing import List, Any, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from Registry import Registry
 from Process import Process
-from Process import setparent as bind
 #TODO
 @dataclass
 class Program:
-    data: List[Process]
-    registry: Registry
-    bindings: Dict[str,Any]#dictionary of variable bindings for a program.
-    size: 0
+    data: List[Process] = field(default_factory=list)
+    registry: Registry = field(default_factory=Registry)
+    bindings: Dict[str,Any] = field(default_factory=dict)#dictionary of variable bindings for a program.
+    size: int = 0
     address_space=None
     def __post_init__(self):
         self.size = sum(len(process) for process in self.data)
@@ -26,4 +25,4 @@ class Program:
     def set_address_space(self, ads):
         self.address_space=ads
         for datum in self.data:
-            datum.setparent(ads)
+            datum.set_address_space(ads)

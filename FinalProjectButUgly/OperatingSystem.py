@@ -14,11 +14,6 @@ from Interrupt import Interrupt
 #Scheduling
 from SchedulerTemplate import Scheduler
 from CPUTimer import CPUTimer
-from FCFSScheduler import FCFSScheduler as FirstComeFirstServe
-from HRNScheduler import HRNScheduler as HighestRatio
-from RRScheduler import RRScheduler as RoundRobin
-from SJFScheduler import SJFScheduler as ShortestJobFirst
-from STRScheduler import STRScheduler as ShortestTimeRemaining
 from dataclasses import dataclass
 import copy
 #Threading and Lock Import
@@ -66,6 +61,7 @@ class OperatingSystem:
     def run(self):
         while True:
             self.lock.acquire()#mutexclustion guaranteed with lock
+            print(f"{self.process_queue}")
             if not self.process_queue.empty():#if there are processes to process
                 self.context_switch(self.process_queue.get())#get the first process on the queue
                 self.execute_process(self.current_process)#execute it
@@ -169,5 +165,8 @@ class OperatingSystem:
     def HANDLE_INTERRUPT_STACK(self):
         while len(self.interrupt_stack)>0:
             OperatingSystem.HANDLEHELPER()
-
+    def debug_print_queue(self):
+        with self.lock:
+            queue_contents = list(self.process_queue.queue)
+            print("Current Queue Contents:", queue_contents)
      

@@ -116,6 +116,27 @@ class OperatingSystem:
                 print("Not enough space to fit"f" {interrupt.data} right now.")
             case Interrupt(name="TheCorrectName"):
                 pass
+            case Interrupt(name="CacheMiss"):
+                pass
+            case Interrupt(name="MOV interrupt"):
+                pass
+            case Interrupt(name="Process-controlled Termination"):
+                pass
+            case Interrupt(name="DMASendError"):
+                pass
+            case Interrupt(name="DMAReceiveError"):
+                pass
+            case Interrupt(name="WriteOutOfBounds"):
+                pass
+            case Interrupt(name="ReadOutOfBounds"):
+                pass
+            case Interrupt(name="PageFault"):
+                pass
+            case Interrupt(name="RAMCapacityWarning"):
+                pass
+
+
+
     @staticmethod
     def HANDLEHELPER(interruptstack: InterruptStack):
         interrupt = interruptstack.pop()

@@ -19,7 +19,7 @@ class CPU:
         try:
             return self.decoder.fetch(memory, address)
         except Interrupt("CacheMiss"):
-            raise Interrupt ("CacheMiss")
+            raise Interrupt ("CacheMiss",message=self.registers)
     #decode: Instruction -> Tuple
     #purpose: Decodes an instruction into its mnemonic, 
     #effects, and locates its operands
@@ -33,8 +33,8 @@ class CPU:
     #within the opcode vocabulary.
     def execute(self, instruction: Tuple[str,Any,List]):
         reglist = ["A","B","C","D","E","F","PC","SP"] 
-        operands = instruction[2]
-        fun = instruction[1]
+        operands = instruction[2] #operands
+        fun = instruction[1] #operation
         #Check operand1's immediate flag
         immediate = True
         if len(operands) > 0 and operands[0] in reglist:
@@ -57,9 +57,9 @@ class CPU:
                 a = a+1
         def execute_instruction():
             if immediate:
-                self.registers.__setitem__("SP",fun(operands))
+                self.registers["SP"] = fun(operands)
             else:
-                self.registers.__setitem__(operands[0],fun(operands))
+                self.registers[operands[0]] = fun(operands)
 
         operands = pass_values(operands)
         match instruction[0]:
@@ -70,31 +70,25 @@ class CPU:
             case "AND"|"OR"|"NOR"|"XOR"|"NAND"|"ADD"|"SUB"|"DIV"|"MUL": #handle boolean statements
                 execute_instruction()
             case "RET":
-                NotImplemented
+                raise Interrupt(name="Process Complete", data=self.registers)
             case "NOP":
                 pass #does nothing, as intended.
             case "PRINT":
-                Interrupt.HANDLE(Interrupt(name="PRINT",data=operands[2]))
+                raise fun#raise so the printer can print, CPU can let this get DMA'd
             case "INPUT":
-                Interrupt.HANDLE(Interrupt(name="INPUT",data=operands[2]))
+                raise fun#raise so that this doesn't squat on the mutex lock.
+            case "MOV":
+                raise fun
             case _:
                 raise InstructionError
         #if we're performing a jump operation do the following:
-
-    def cycle(self,)
+    #Purpose: Performs a fetch decode execute cycle.
+    def cycle(self,address: int, mem: Memory):
+        try:
+            self.execute(self.decode(self.fetch(address,mem)))
+        except Interrupt as e:
+            raise e
+        
     #run: -> Effect!
     #Purpose: Executes instructions arriving from
     #memory, then advances the program counter
-
-    #TO-DO: Both execute and run will likely have to be integrated
-    #to run with Memory, once the class exists and is coded.
-    def run(self):
-            address = self.registers["PC"]
-            try:
-                next_address, instruction = self.decoder.decode(address)
-            except Exception as e:
-                match 
-                raise Interrupt("Process Complete")
-            except Interrupt
-            self.registers["PC"] = next_address
-            self.execute(instruction)

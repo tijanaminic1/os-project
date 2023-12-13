@@ -41,9 +41,9 @@ class Decoder:
             case Instruction(name="NAND"):
                 instructions[1] = (lambda x,y: not (x and y))
             case Instruction(name="MOV"):
-                raise Interrupt(name="MOV interrupt",data=instructions[2])
+                instructions[1] = Interrupt(name="MOV interrupt",data=instructions[2])
             case Instruction(name="RET"): #terminates the execution of a procedure and transfers control through a back-link on the stack to the program that originally invoked the procedure
-                raise Interrupt(name="Process-controlled Termination")
+                instructions[1] = Interrupt(name="Process-controlled Termination",data=instructions[2])
             case Instruction(name="JMP"):
                 instructions[1] = (lambda a,b: b)
             case Instruction(name="JLE"):#If val(SP) <= 0 then change Program Counter
@@ -59,9 +59,9 @@ class Decoder:
             case Instruction(name="JNE"):
                 instructions[1] = (lambda a,b: b if a!=0 else None)
             case Instruction(name="PRINT"):
-                instructions[1] = (lambda: Interrupt("PRINT"))
+                instructions[1] =  Interrupt("PRINT",data=instructions[2])
             case Instruction(name="INPUT"):
-                instructions[1] = (lambda: Interrupt("INPUT"))
+                instructions[1] =  Interrupt("INPUT",data=instructions[2])
             case _:
                 raise InstructionError
         return instructions

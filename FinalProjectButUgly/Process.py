@@ -8,7 +8,7 @@ class Process:
     registers: Registry
     end = 0 
     partitions: List[int]#List of partitions the created process occupies. determined later.
-
+    parent = None
     def __post_init__(self):
         self.end = sum(len(i) for i in self.data)
     #Purpose: self.data getter
@@ -43,3 +43,7 @@ class Process:
         return self.registers["PC"]
     def execution_completed(self):
         return self.remaining_time()==0
+    def setparent(self, parent_id):
+        self.parent = parent_id
+    def get_parent(self):
+        return self.parent

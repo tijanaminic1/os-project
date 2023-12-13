@@ -1,28 +1,20 @@
 from Memory import Memory
 from Cache import Cache
 from RAM import RAM
+from Process import Process
 from Interrupt import Interrupt
-#DMA: source (Object)#TODO
+
 class DMA:
     @staticmethod
-    def SEND(client, destination: Memory):
-        match destination:
-            case Cache():
-                pass
-            case RAM():
-                pass
-            case Memory():
-                pass
-            case _:
-                raise Interrupt("DMASendError")
+    def SEND(source: Process, message, destination: RAM):
+        try:
+            binding_var, binding_value = message
+            destination[source.parent()][binding_var] = binding_value
+        except KeyError:
+            raise Interrupt("DMAIndexOutOfBounds")
     @staticmethod
-    def REQUEST(client, source: Memory):
-        match source:
-            case Cache():
-                pass
-            case RAM():
-                pass
-            case Memory():
-                pass
-            case _:
-                raise Interrupt("DMAReceiveError")
+    def REQUEST(source: Process, message, destination: RAM):
+        try:
+            return destination[source.parent()][message]
+        except KeyError:
+            raise Interrupt("DMAIndexOutOfBounds")

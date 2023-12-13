@@ -2,6 +2,7 @@ from typing import List, Any, Dict
 from dataclasses import dataclass
 from Registry import Registry
 from Process import Process
+from Process import setparent as bind
 #TODO
 @dataclass
 class Program:
@@ -9,11 +10,11 @@ class Program:
     registry: Registry
     bindings: Dict[str,Any]#dictionary of variable bindings for a program.
     size: 0
+    address_space=None
     def __post_init__(self):
         self.size = sum(len(process) for process in self.data)
     def reference(self, varname: str):
         return self.bindings.get(varname)
-    
     #The size of a program is the size of all of the subprocesses
     #inside that program.
     def __len__(self):
@@ -22,3 +23,7 @@ class Program:
         return self.data[key]
     def __setitem__(self,key,newvalue):
         self.data[key] = newvalue
+    def set_address_space(self, ads):
+        self.address_space=ads
+        for datum in self.data:
+            datum.setparent(ads)

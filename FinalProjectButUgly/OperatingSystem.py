@@ -73,11 +73,12 @@ class OperatingSystem:
         self.timer.start(process)
         # Process execution logic: Fetch, Decode, Execute cycle
         while not process.execution_completed():#While the process is not finished --- Shouldn't the Processbe controlled by the Scheduler?
-            address = process.current_instruction_address()#address = current instruction address (Bug?)
-            instruction = self.cpu.fetch(address, self.cache, self.ram)#Fetches from memory (Bug! fetch takes an address and a memory location. Let interrupt handling fetch from RAM when the )
-            decoded = self.cpu.decode(instruction) #I think I will implement this 
-            self.cpu.execute(decoded)#and this with cpu.fetch as cpu.cycle(adress: int, mem: Memory)
-            process.advance_instruction()#Why are we advancing process? The CPU advances its program counter and the CPU state is saved during context switch. Right?
+            try:
+                address = process.current_instruction_address()#address = current instruction address (Bug?)
+                self.cpu.cycle(address,self.cache) #A CPU cycle
+            except Interrupt as e:
+                self.interrupt_stack.push(e)
+                OperatingSystem.HANDLE_INTERRUPT_STACK()
         self.timer.stop(process)
         self.report_completion(process)
 
@@ -99,42 +100,37 @@ class OperatingSystem:
     #Purpose: When an interrupt is signalled,
     #the HANDLE(Interrupt) function defines an
     #approach to deal with the particular interrupt
-    @staticmethod
-    def HANDLE(interrupt: Interrupt):
+    def HANDLE(self, interrupt: Interrupt):
         match interrupt:
             case Interrupt(name="PRINT"):
                 print(interrupt.MESSAGE())
             case Interrupt(name="INPUT"):
                 input(interrupt.MESSAGE())
-            case Interrupt(name="DMAFatalError"):#TODO: Estalish recovery protocol for DMA failure.
-                print("DMA failed due to fatal error.")
             case Interrupt(name="DMAIndexOutOfBounds"): #This is also a type of Page Fault
                 print("DMA failed! Entry does not exist.")
             case Interrupt(name="ProcessTooLarge"):#TODO: Generally a fatal error, unless we do VRAM.
                 print("Process too large to fit in the cache!")
             case Interrupt(name="CacheBottleneck"):#TODO: Integrate this with scheduling algorithm. It is a scheduling issue.
-                print("Not enough space to fit"f" {interrupt.data} right now.")
-            case Interrupt(name="TheCorrectName"):
-                pass
+                print("Not enough space to fit"f" {interrupt.MESSAGE()} right now.")
             case Interrupt(name="CacheMiss"):
-                pass
+                try:
+                    return self.current_process[interrupt.MESSAGE()["PC"]]
+                except Exception:
+                    raise Interrupt("Segmentation Fault")
             case Interrupt(name="MOV interrupt"):
-                pass
+                DMA.SEND(self.current_process,interrupt.MESSAGE())
             case Interrupt(name="Process-controlled Termination"):
-                pass
-            case Interrupt(name="DMASendError"):
-                pass
-            case Interrupt(name="DMAReceiveError"):
-                pass
+                print("Process under "f"{self.current_process.parent()} finished.")
             case Interrupt(name="WriteOutOfBounds"):
-                pass
+                print("Write out of bounds")
             case Interrupt(name="ReadOutOfBounds"):
-                pass
+                print("Read Out of Bounds")
             case Interrupt(name="PageFault"):
-                pass
+                print("Page fault")
             case Interrupt(name="RAMCapacityWarning"):
-                pass
-
+                print("RAM capacity warning")
+            case Interrupt(name="SegmentationFault"):
+                print("Segmentation Fault")
 
 
     @staticmethod
@@ -145,7 +141,7 @@ class OperatingSystem:
         except Interrupt as e:
             OperatingSystem.HANDLE(e)
             OperatingSystem.HANDLE(interrupt)
-    def HANDLESTACK(self):
+    def HANDLE_INTERRUPT_STACK(self):
         while len(self.interrupt_stack)>0:
             OperatingSystem.HANDLEHELPER()
 

@@ -24,7 +24,7 @@ class Cache(Memory):
     #Purpose: returns a list of blocks (partitions) in the order
     #the relative indices (blocks) were received
 
-    def fetch_blocks(self, *args:Iterable[int])->List[Instruction]:
+    def fetch_blocks(self, args:Iterable[int])->List[Instruction]:
         return [self.fetch(partition) for partition in args]
     #blockify: size -> Tuple[Int,Int]
     #Purpose: Returns a Tuple that represents a block's start index, and its end index+1
@@ -36,14 +36,9 @@ class Cache(Memory):
     #check: natnum(0,15) -> boolean
     #Purpose: Determine whether or not a block is free
     def check(self, blocknum: int):
-        #is_none = (lambda x: x is None)
-        for index in self.fetch_blocks(blocknum):
-            if index is None:
-                pass
-            else:
-                return False
-        return True
-        #return all(is_none(index) for index in self.fetch_blocks(blocknum))
+        is_none = (lambda x: x is None)
+        print(f"checking {blocknum} has {self.fetch(blocknum)}")
+        return all(is_none(index) for index in self.fetch(blocknum))
     
     #blocks_free: -> natnum
     #Purpos: returns the number of blocks free in the Cache
@@ -59,7 +54,11 @@ class Cache(Memory):
     #ASSUMPTION: len(iterable) <= block_size
     def set_block(self, blocknum: int, iterable: Iterable):
         indices = range(*self.blockify(blocknum))
-        self.data[indices] = [value for value in iterable]
+        for index in indices:
+            try:
+                self.data[index] = iterable[index-indices[0]]
+            except IndexError:
+                print("indexerror")
     #allocable: int -> int or Interrupt
     #Purpose: Given a size of a set of instructions,
     #returns an Interrupt if the set of instructions is too

@@ -1,20 +1,30 @@
-from .CentralProcessor import CPU, Decoder, Registry
-from .Memory import RAM, Cache, DMA
+#Central Processor Imports
+from .CentralProcessor.CPU import CPU
+from .CentralProcessor.Decoder import Decoder
+from .CentralProcessor.Registry import Registry
+#Memory Imports
+from .Memory.RAM import RAM 
+from .Memory.Cache import Cache
+from .Memory.DMA import DMA
 from .InstructionArchitecture.Process import Process
 from .InstructionArchitecture.Program import Program
-from .Interrupt import InterruptStack, Interrupt
-from .Threads import *
+#Interrupts
+from .Interrupt.InterruptStack import InterruptStack
+from .Interrupt.Interrupt import Interrupt
+#Scheduling
 from .Scheduling.SchedulerTemplate import Scheduler
 from .Scheduling.CPUTimer import CPUTimer
-from .Scheduling.FCFSScheduler import FCFSScheduler
+from .Scheduling.FCFSScheduler import FCFSScheduler as FirstComeFirstServe
+from .Scheduling.HRNScheduler import HRNScheduler as HighestRatio
+from .Scheduling.RRScheduler import RRScheduler as RoundRobin
+from .Scheduling.SJFScheduler import SJFScheduler as ShortestJobFirst
+from .Scheduling.STRScheduler import STRScheduler as ShortestTimeRemaining
 from dataclasses import dataclass
 import copy
-
-#NOTE: This is a barebones implementation of the operating system
-#This is supposed to serve as a roadmap to aid in the programming of
-#the operating system.
+#Threading and Lock Import
 from threading import Thread, Lock
 from queue import Queue
+#Prettiness Imports
 from dataclasses import dataclass, field
 from typing import List, Optional
 @dataclass
@@ -84,36 +94,3 @@ class OperatingSystem:
         turnaround_time = self.timer.get_turnaround_time(process)
         arrival_time = process.arrival_time
         print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
-
-# Placeholder classes
-class CPU:
-    # Your CPU implementation here
-    pass
-
-class RAM:
-    # Your RAM implementation here
-    pass
-
-class Cache:
-    # Your Cache implementation here
-    pass
-
-class Scheduler:
-    # Your Scheduler implementation here
-    pass
-
-class InterruptStack:
-    # Your InterruptStack implementation here
-    pass
-
-class DMA:
-    # Your DMA implementation here
-    pass
-
-class CPUTimer:
-    # Your CPUTimer implementation here
-    pass
-
-class Process:
-    # Your Process implementation here
-    pass

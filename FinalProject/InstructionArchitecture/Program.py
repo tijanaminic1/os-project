@@ -17,7 +17,7 @@ class Program:
     #The size of a program is the size of all of the subprocesses
     #inside that program.
     def __len__(self):
-        return self.size
+        return sum(len(process) for process in self.data)
     def __getitem__(self,key):
         return self.data[key]
     def __setitem__(self,key,newvalue):

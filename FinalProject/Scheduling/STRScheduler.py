@@ -1,5 +1,5 @@
-from .SchedulerTemplate import Scheduler
-from ..InstructionArchitecture import Process
+from SchedulerTemplate import Scheduler
+from InstructionArchitecture.Process import Process
 class STRScheduler(Scheduler):
     def __init__(self):
         self.ready_queue = []

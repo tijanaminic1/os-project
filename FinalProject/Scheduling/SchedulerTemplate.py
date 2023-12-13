@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from queue import Queue
-from ..InstructionArchitecture import Process
+from InstructionArchitecture.Process import Process
 class Scheduler(ABC):
     @abstractmethod
     def add_process(self, process: Process):

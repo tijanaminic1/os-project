@@ -1,5 +1,5 @@
-from .SchedulerTemplate import Scheduler
-from ..InstructionArchitecture.Process import Process
+from SchedulerTemplate import Scheduler
+from InstructionArchitecture.Process import Process
 import time
 from CPUTimer import CPUTimer
 class HRNScheduler(Scheduler):

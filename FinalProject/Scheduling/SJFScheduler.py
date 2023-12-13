@@ -1,4 +1,4 @@
-from .SchedulerTemplate import Scheduler
+from SchedulerTemplate import Scheduler
 from ..InstructionArchitecture.Process import Process
 class SJFScheduler(Scheduler):
     def __init__(self):

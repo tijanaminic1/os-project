@@ -1,24 +1,24 @@
 #Central Processor Imports
-from .CentralProcessor.CPU import CPU
-from .CentralProcessor.Decoder import Decoder
-from .CentralProcessor.Registry import Registry
+from CPU import CPU
+from Decoder import Decoder
+from Registry import Registry
 #Memory Imports
-from .Memory.RAM import RAM 
-from .Memory.Cache import Cache
-from .Memory.DMA import DMA
-from .InstructionArchitecture.Process import Process
-from .InstructionArchitecture.Program import Program
+from RAM import RAM 
+from Cache import Cache
+from DMA import DMA
+from Process import Process
+from Program import Program
 #Interrupts
-from .Interrupt.InterruptStack import InterruptStack
-from .Interrupt.Interrupt import Interrupt
+from InterruptStack import InterruptStack
+from Interrupt import Interrupt
 #Scheduling
-from .Scheduling.SchedulerTemplate import Scheduler
-from .Scheduling.CPUTimer import CPUTimer
-from .Scheduling.FCFSScheduler import FCFSScheduler as FirstComeFirstServe
-from .Scheduling.HRNScheduler import HRNScheduler as HighestRatio
-from .Scheduling.RRScheduler import RRScheduler as RoundRobin
-from .Scheduling.SJFScheduler import SJFScheduler as ShortestJobFirst
-from .Scheduling.STRScheduler import STRScheduler as ShortestTimeRemaining
+from SchedulerTemplate import Scheduler
+from CPUTimer import CPUTimer
+from FCFSScheduler import FCFSScheduler as FirstComeFirstServe
+from HRNScheduler import HRNScheduler as HighestRatio
+from RRScheduler import RRScheduler as RoundRobin
+from SJFScheduler import SJFScheduler as ShortestJobFirst
+from STRScheduler import STRScheduler as ShortestTimeRemaining
 from dataclasses import dataclass
 import copy
 #Threading and Lock Import
@@ -95,3 +95,43 @@ class OperatingSystem:
         arrival_time = process.arrival_time
         print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
 
+    #HANDLE: Interrupt -> Effect!
+    #Purpose: When an interrupt is signalled,
+    #the HANDLE(Interrupt) function defines an
+    #approach to deal with the particular interrupt
+    @staticmethod
+    def HANDLE(interrupt: Interrupt):
+        match interrupt:
+            case Interrupt(name="PRINT"):
+                print(interrupt.MESSAGE())
+            case Interrupt(name="INPUT"):
+                input(interrupt.MESSAGE())
+            case Interrupt(name="DMAFatalError"):#TODO: Estalish recovery protocol for DMA failure.
+                print("DMA failed due to fatal error.")
+            case Interrupt(name="DMAIndexOutOfBounds"): #This is also a type of Page Fault
+                print("DMA failed! Entry does not exist.")
+            case Interrupt(name="ProcessTooLarge"):#TODO: Generally a fatal error, unless we do VRAM.
+                print("Process too large to fit in the cache!")
+            case Interrupt(name="CacheBottleneck"):#TODO: Integrate this with scheduling algorithm. It is a scheduling issue.
+                print("Not enough space to fit"f" {interrupt.data} right now.")
+            case Interrupt(name="TheCorrectName"):
+                pass
+    @staticmethod
+    def HANDLEHELPER(interruptstack: InterruptStack):
+        interrupt = interruptstack.pop()
+        try:
+            OperatingSystem.HANDLE(interrupt)
+        except Interrupt as e:
+            OperatingSystem.HANDLE(e)
+            OperatingSystem.HANDLE(interrupt)
+    def HANDLESTACK(self):
+        while len(self.interrupt_stack)>0:
+            OperatingSystem.HANDLEHELPER()
+
+                
+            #TODO: #1 Look for cases where this may cause an infinite loop.
+            #These can be found by looking at Interrupt.HANDLE in Interrupt.py
+            #We want strong invariants for our Handle function so that we can
+            #reliably service nested interrupts.
+    #HANDLESTACK: -> Effect!
+    #Purpose: Tries to service the interrupt stack.

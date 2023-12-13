@@ -1,8 +1,14 @@
 from dataclasses import dataclass
-from . import Decoder, Registry
-from ..InstructionArchitecture import Instruction, InstructionError,Registry
-from ..Memory import Memory, Cache, RAM
-from ..Interrupt import Interrupt, InterruptStack
+from Decoder import Decoder
+from Registry import Registry
+from  Instruction import Instruction
+from Memory import Memory
+from InstructionError import InstructionError
+#from Cache import Cache
+#from RAM import RAM
+from Interrupt import Interrupt
+from typing import Any, List, Tuple
+#from InterruptStack import InterruptStack
 @dataclass
 class CPU:
     registers: Registry
@@ -17,7 +23,7 @@ class CPU:
     #decode: Instruction -> Tuple
     #purpose: Decodes an instruction into its mnemonic, 
     #effects, and locates its operands
-    def decode(self,inst: Instruction)->(str,function,list):
+    def decode(self,inst: Instruction)->Tuple[str,Any,List]:
         return self.decoder.decode(inst)
     #Execute: Instruction -> EFFECT!
     #Purpose: Attempts to execute the given instruction, making use
@@ -25,7 +31,7 @@ class CPU:
     #EFFECT!: Based off of the given Instruction, code will be executed
     #that modifies the CPU state relevant to the Instruction's significance
     #within the opcode vocabulary.
-    def execute(self, instruction: (str,function,list) ):
+    def execute(self, instruction: Tuple[str,Any,List]):
         reglist = ["A","B","C","D","E","F","PC","SP"] 
         operands = instruction[2]
         fun = instruction[1]

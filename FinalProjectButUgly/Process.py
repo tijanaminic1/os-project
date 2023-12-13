@@ -11,21 +11,25 @@ class Process:
 
     def __post_init__(self):
         self.end = sum(len(i) for i in self.data)
-    @property
+    #Purpose: self.data getter
     def DATA(self):
         return self.data
-    @property
+    #Purpose: self.registers getter
     def REGISTERS(self):
         return self.registers
-    @property
+    #Purpose: self.PARTITIONS getter (set associate addressing)
     def PARTITIONS(self):
         return self.partitions
+    #Purpose: self.partitions setter
     def setPARTITIONS(self,value):
         self.partitions = value
+    #dunder for length of Process
     def __len__(self):
         return self.end
+    #dunder for making object [] usable
     def __getitem__(self,arg):
         return self.data[arg]
+    #dunder for making object iterable
     def __iter__(self):
         return iter(self.data)
     #Purpose: saves the given CPU state to the Process.
@@ -33,6 +37,9 @@ class Process:
     def save_state(self, a_registry):
         self.registers=a_registry
     #Purpose: Gets the estimated time remaining for a job.
-    @property
     def remaining_time(self):
         return len(self) - self.registers["PC"]
+    def current_instruction_address(self):
+        return self.registers["PC"]
+    def execution_completed(self):
+        return self.remaining_time()==0

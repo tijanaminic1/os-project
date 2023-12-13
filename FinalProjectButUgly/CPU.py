@@ -81,7 +81,7 @@ class CPU:
                 raise InstructionError
         #if we're performing a jump operation do the following:
 
-
+    def cycle(self,)
     #run: -> Effect!
     #Purpose: Executes instructions arriving from
     #memory, then advances the program counter
@@ -89,11 +89,12 @@ class CPU:
     #TO-DO: Both execute and run will likely have to be integrated
     #to run with Memory, once the class exists and is coded.
     def run(self):
-        while True:
             address = self.registers["PC"]
             try:
                 next_address, instruction = self.decoder.decode(address)
-            except IndexError:
-                break
+            except Exception as e:
+                match 
+                raise Interrupt("Process Complete")
+            except Interrupt
             self.registers["PC"] = next_address
             self.execute(instruction)

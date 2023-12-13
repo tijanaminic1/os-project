@@ -49,35 +49,35 @@ class OperatingSystem:
 
     def run(self):
         while True:
-            self.lock.acquire()
-            if not self.process_queue.empty():
-                self.context_switch(self.process_queue.get())
-                self.execute_process(self.current_process)
-                self.process_queue.task_done()
-            self.lock.release()
+            self.lock.acquire()#mutexclustion guaranteed with lock
+            if not self.process_queue.empty():#if there are processes to process
+                self.context_switch(self.process_queue.get())#get the first process on the queue
+                self.execute_process(self.current_process)#execute it
+                self.process_queue.task_done()#mark the task as complete
+            self.lock.release() #lock released by program after execution completes.
 
-    def load_process(self, process: Process):
-        self.lock.acquire()
-        self.processes.append(process)
-        self.scheduler.add_process(process)
-        self.process_queue.put(process)
-        self.lock.release()
+    def load_process(self, process: Process):#Why are both run() and load_process() managing the Lock()?
+        self.lock.acquire()#acquire the lock
+        self.processes.append(process)#append the process to the processes
+        self.scheduler.add_process(process)#schedule the process
+        self.process_queue.put(process)#add the process to the process_queue
+        self.lock.release()#release the lock
 
     def context_switch(self, process: Process):
-        if self.current_process:
-            self.save_state(self.current_process)
-        self.current_process = process
-        self.restore_state(process)
+        if self.current_process:#If current_process is a Process
+            self.save_state(self.current_process)#save its state
+        self.current_process = process#switch the current process to the input
+        self.restore_state(process)#update the CPU Register to pick up where the task left off.
 
     def execute_process(self, process: Process):
         self.timer.start(process)
         # Process execution logic: Fetch, Decode, Execute cycle
-        while not process.execution_completed():
-            address = process.current_instruction_address()
-            instruction = self.cpu.fetch(address, self.cache, self.ram)
-            decoded = self.cpu.decode(instruction)
-            self.cpu.execute(decoded)
-            process.advance_instruction()
+        while not process.execution_completed():#While the process is not finished --- Shouldn't the Processbe controlled by the Scheduler?
+            address = process.current_instruction_address()#address = current instruction address (Bug?)
+            instruction = self.cpu.fetch(address, self.cache, self.ram)#Fetches from memory (Bug! fetch takes an address and a memory location. Let interrupt handling fetch from RAM when the )
+            decoded = self.cpu.decode(instruction) #I think I will implement this 
+            self.cpu.execute(decoded)#and this with cpu.fetch as cpu.cycle(adress: int, mem: Memory)
+            process.advance_instruction()#Why are we advancing process? The CPU advances its program counter and the CPU state is saved during context switch. Right?
         self.timer.stop(process)
         self.report_completion(process)
 

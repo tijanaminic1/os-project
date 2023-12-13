@@ -145,10 +145,4 @@ class OperatingSystem:
         while len(self.interrupt_stack)>0:
             OperatingSystem.HANDLEHELPER()
 
-                
-            #TODO: #1 Look for cases where this may cause an infinite loop.
-            #These can be found by looking at Interrupt.HANDLE in Interrupt.py
-            #We want strong invariants for our Handle function so that we can
-            #reliably service nested interrupts.
-    #HANDLESTACK: -> Effect!
-    #Purpose: Tries to service the interrupt stack.
+     

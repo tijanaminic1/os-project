@@ -12,7 +12,9 @@ class Cache(Memory):
     data: List[Instruction] = field(default_factory=list)
     block_size: int = size//partitions
     def __post_init__(self):
+        self.size = self.partitions*16
         self.data=[None]*self.size
+        self.block_size=16
     #fetch: int -> sublist(data)
     #Purpose: returns a particular block of memory in the cache data
     def fetch(self,arg:int)->List[Instruction]:
@@ -34,8 +36,14 @@ class Cache(Memory):
     #check: natnum(0,15) -> boolean
     #Purpose: Determine whether or not a block is free
     def check(self, blocknum: int):
-        is_none = (lambda x: x is None)
-        return all(is_none(index) for index in self.fetch_blocks(blocknum))
+        #is_none = (lambda x: x is None)
+        for index in self.fetch_blocks(blocknum):
+            if index is None:
+                pass
+            else:
+                return False
+        return True
+        #return all(is_none(index) for index in self.fetch_blocks(blocknum))
     
     #blocks_free: -> natnum
     #Purpos: returns the number of blocks free in the Cache
@@ -57,14 +65,34 @@ class Cache(Memory):
     #returns an Interrupt if the set of instructions is too
     #large to be processed, or an integer relating to the
     #amount
-    def allocable(self,data_size: Process):
-        space_needed = (len(data_size)/self.block_size)
-        if space_needed > self.partitions:
+    """
+    def allocable(self,proc: Process):
+        #space_needed = (len(proc)/self.block_size)
+        can_never_fit = (len(proc)>self.size)
+        can_fit = (len(proc)<=self.blocks_free()*self.block_size)
+
+        if can_never_fit:
             raise Interrupt("ProcessTooLarge")
-        elif space_needed > self.blocks_free():
+        elif can_fit:
+            print(f"Not enough blocks free to allocate. Process size: {len(proc)}, Free Blocks {self.blocks_free()}")
             return False
         else:
+            print(f"Cache blocks available.")
             return True
+    """
+    def allocable(self, process_size: int):
+        can_never_fit = process_size > self.size
+        can_fit = process_size <= self.blocks_free() * self.block_size
+
+        if can_never_fit:
+            raise Interrupt("ProcessTooLarge")
+        elif not can_fit:
+            print(f"Not enough blocks free to allocate. Process size: {process_size}, Free Blocks: {self.blocks_free()}")
+            return False
+        else:
+            print(f"Cache blocks available.")
+            return True
+
     #allocate: Process -> Effect!
     #Purpose: Allocates the given memory info if it can, otherwise raises an Interrupt    
     def allocate(self,input:Process):

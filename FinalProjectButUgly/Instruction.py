@@ -4,7 +4,7 @@ class Instruction:
             case 0: #0 supplied arguments
                 self.name = "NOP"
                 self.arguments = []
-                self.size = 0
+                self.size = 1
             case 1:#1 supplied arguments
                 self.name = args[0]
                 self.arguments = []
@@ -12,7 +12,7 @@ class Instruction:
             case _:# 2+supplied arguments
                 self.name = args[0]
                 self.arguments = args[1:]
-                self.size = len(args)
+                self.size = 1
     #mnemonic: -> string
     #purpose: returns the name of an instruction
     def mnemonic(self):

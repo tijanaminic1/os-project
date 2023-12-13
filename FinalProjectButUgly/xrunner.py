@@ -39,13 +39,29 @@ program3 = copy.deepcopy(program)
 program4 = copy.deepcopy(program)
 program5 = copy.deepcopy(program)
 
-os_fcfs = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=fcfs_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program1])
-os_rr = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=rr_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program2])
-os_sjf = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=sjf_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program3])
-os_hrn = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=hrn_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program4])
-os_str = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=Cache(), scheduler=str_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program5])
+
+cache_mem = Cache(partitions=16,size=16*16,data=[],block_size=16)
 if __name__ == "__main__":
-    os_fcfs.start()
+    test_this = "fcfs"#change this to run other tests of scheduling
+    match test_this:
+        case "fcfs":
+            os_fcfs = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=fcfs_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program1])
+            os_fcfs.start()
+        case "rr":
+            os_rr = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=rr_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program2])
+            os_rr.start()
+        case "sjf":
+            os_sjf = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=sjf_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program3])
+            os_sjf.start()
+        case "hrn":
+            os_hrn = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=hrn_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program4])
+            os_hrn.start()
+        case _:
+            os_str = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=str_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[program5])
+            os_str.start()
+
+            
+        
     #os_rr.start()
     #os_sjf.start()
     #os_hrn.start()

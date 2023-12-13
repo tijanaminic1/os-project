@@ -22,6 +22,7 @@ from queue import Queue
 #Prettiness Imports
 from dataclasses import dataclass, field
 from typing import List, Optional
+import time
 class OperatingSystem:
     def __init__(self, cpu, ram, cache, scheduler, interrupt_stack, dma, processes=None, inputs=None):
         self.cpu = cpu
@@ -40,51 +41,107 @@ class OperatingSystem:
         self.initialize_system()
 
     def initialize_system(self):
-        # Load programs and their processes into RAM
-        for program in self.inputs:
-            for process in program.data:
-                self.load_process_to_ram(process)
-    def initialize_system(self):
+        print("Initializing system...")
         for program in self.inputs:
             for process in program.data:
                 self.load_process_to_ram(process)
     def load_process_to_ram(self, process: Process):
+        print(f"Loading process {process} into RAM...")
         try:
             self.ram.write(process)
+            self.processes.append(process)
         except Interrupt as e:
             print(f"Error loading process to RAM: {e}")
-            return
-        self.processes.append(process)
-    def start(self):
-        self.thread.start()
+        else:
+            self.load_process(process)
 
+    def start(self):
+        print("Starting OS...")
+        self.thread.start()
+        print("OS thread started.")
+        # Keep the main thread alive for debugging
+        import time
+        time.sleep(30)
+    """
     def run(self):
         while True:
-            self.lock.acquire()#mutexclustion guaranteed with lock
-            print(f"{self.process_queue}")
-            if not self.process_queue.empty():#if there are processes to process
-                self.context_switch(self.process_queue.get())#get the first process on the queue
-                self.execute_process(self.current_process)#execute it
-                self.process_queue.task_done()#mark the task as complete
-            self.lock.release() #lock released by program after execution completes.
-
-    def load_process(self, process: Process):
-        # Load process from RAM to Cache before execution
-        if self.cache.allocable(len(process)):  # Check if cache has space
+            self.lock.acquire()
             try:
-                self.cache.allocate(process)  # Load process to cache
-                # Continue with existing load_process logic
-                self.lock.acquire()  # Acquire the lock
-                self.processes.append(process)  # Append the process to the processes
-                self.scheduler.add_process(process)  # Schedule the process
-                self.process_queue.put(process)  # Add the process to the process_queue
-                self.lock.release()  # Release the lock
+                if not self.process_queue.empty():
+                    self.context_switch(self.process_queue.get())
+                    self.execute_process(self.current_process)
+                    self.process_queue.task_done()
+            except Exception as e:
+                print(f"Error in run method: {e}")
+            finally:
+                self.lock.release()
+            # Add a sleep for debugging
+            import time
+            time.sleep(1)
+    """
+
+    def start(self):
+        print("Starting OS...")
+        self.thread.start()
+        print("OS thread started.")
+        # Keep the main thread alive for debugging
+        import time
+        time.sleep(30)
+
+    def run(self):
+        print("OS running...")
+        while True:
+            self.lock.acquire()
+            try:
+                if not self.process_queue.empty():
+                    print("Processing a process from the queue...")
+                    self.context_switch(self.process_queue.get())
+                    self.process_queue.task_done()
+                else:
+                    print("Queue is empty...")
+            except Exception as e:
+                print(f"Error in run method: {e}")
+            finally:
+                self.lock.release()
+            time.sleep(1)
+    """
+    def load_process(self, process: Process):
+        if self.cache.allocable(len(process)):
+            try:
+                self.cache.allocate(process)
+                self.lock.acquire()
+                self.processes.append(process)
+                self.scheduler.add_process(process)
+                self.process_queue.put(process)
+                print(f"Process {process} loaded into queue.")
             except Interrupt as e:
                 print(f"Error loading process to Cache: {e}")
+            finally:
+                self.lock.release()
         else:
             print("Not enough space in cache")
-
+        """
+    def load_process(self, process: Process):
+        print(f"Attempting to load process {process} from RAM to Cache...")
+        lock_acquired = False
+        try:
+            if self.cache.allocable(len(process)):
+                self.cache.allocate(process)
+                print(f"Process {process} allocated in cache.")
+                self.lock.acquire()
+                lock_acquired = True
+                self.scheduler.add_process(process)
+                self.process_queue.put(process)
+                print(f"Process {process} added to queue.")
+            else:
+                print("Not enough space in cache.")
+        except Interrupt as e:
+            print(f"Error loading process to Cache: {e}")
+        finally:
+            if lock_acquired:
+                self.lock.release()
     def context_switch(self, process: Process):
+        print(f"Context switching to process {process}")
         if self.current_process:#If current_process is a Process
             self.save_state(self.current_process)#save its state
         self.current_process = process#switch the current process to the input
@@ -92,16 +149,18 @@ class OperatingSystem:
 
     def execute_process(self, process: Process):
         self.timer.start(process)
-        # Process execution logic: Fetch, Decode, Execute cycle
-        while not process.execution_completed():#While the process is not finished --- Shouldn't the Processbe controlled by the Scheduler?
-            try:
-                address = process.current_instruction_address()#address = current instruction address (Bug?)
-                self.cpu.cycle(address,self.cache) #A CPU cycle
-            except Interrupt as e:
-                self.interrupt_stack.push(e)
-                OperatingSystem.HANDLE_INTERRUPT_STACK()
-        self.timer.stop(process)
-        self.report_completion(process)
+        try:
+            while not process.execution_completed():
+                address = process.current_instruction_address()
+                self.cpu.cycle(address, self.cache)
+        except Interrupt as e:
+            self.interrupt_stack.push(e)
+            self.HANDLE_INTERRUPT_STACK()
+        except Exception as e:
+            print(f"Error during process execution: {e}")
+        finally:
+            self.timer.stop(process)
+            self.report_completion(process)
 
     def save_state(self, process: Process):
         # Save the state of the process
@@ -156,12 +215,11 @@ class OperatingSystem:
 
     @staticmethod
     def HANDLEHELPER(interruptstack: InterruptStack):
-        interrupt = interruptstack.pop()
         try:
+            interrupt = interruptstack.pop()
             OperatingSystem.HANDLE(interrupt)
-        except Interrupt as e:
-            OperatingSystem.HANDLE(e)
-            OperatingSystem.HANDLE(interrupt)
+        except Exception as e:
+            print(f"Error handling helper: {e}")
     def HANDLE_INTERRUPT_STACK(self):
         while len(self.interrupt_stack)>0:
             OperatingSystem.HANDLEHELPER()
@@ -169,4 +227,18 @@ class OperatingSystem:
         with self.lock:
             queue_contents = list(self.process_queue.queue)
             print("Current Queue Contents:", queue_contents)
-     
+"""
+def test_threading():
+    print("Testing basic threading...")
+    def test_function():
+        while True:
+            print("Thread is running...")
+            time.sleep(1)
+
+    test_thread = Thread(target=test_function)
+    test_thread.start()
+    time.sleep(30)
+
+# Uncomment to test basic threading
+#test_threading()
+"""

@@ -40,7 +40,7 @@ program4 = copy.deepcopy(program)
 program5 = copy.deepcopy(program)
 
 
-cache_mem = Cache(partitions=16,size=16*16,data=[],block_size=16)
+cache_mem = Cache(data=None)
 if __name__ == "__main__":
     test_this = "fcfs"#change this to run other tests of scheduling
     match test_this:

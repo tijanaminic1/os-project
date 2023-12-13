@@ -45,6 +45,7 @@ class OperatingSystem:
         for program in self.inputs:
             for process in program.data:
                 self.load_process_to_ram(process)
+    """
     def load_process_to_ram(self, process: Process):
         print(f"Loading process {process} into RAM...")
         try:
@@ -54,6 +55,7 @@ class OperatingSystem:
             print(f"Error loading process to RAM: {e}")
         else:
             self.load_process(process)
+    """
 
     def start(self):
         print("Starting OS...")
@@ -61,24 +63,7 @@ class OperatingSystem:
         print("OS thread started.")
         # Keep the main thread alive for debugging
         import time
-        time.sleep(30)
-    """
-    def run(self):
-        while True:
-            self.lock.acquire()
-            try:
-                if not self.process_queue.empty():
-                    self.context_switch(self.process_queue.get())
-                    self.execute_process(self.current_process)
-                    self.process_queue.task_done()
-            except Exception as e:
-                print(f"Error in run method: {e}")
-            finally:
-                self.lock.release()
-            # Add a sleep for debugging
-            import time
-            time.sleep(1)
-    """
+        time.sleep(30)#This is just to force the main thread to stay alive to get juicy outputs.
 
     def start(self):
         print("Starting OS...")
@@ -104,48 +89,51 @@ class OperatingSystem:
             finally:
                 self.lock.release()
             time.sleep(1)
-    """
-    def load_process(self, process: Process):
-        if self.cache.allocable(len(process)):
-            try:
-                self.cache.allocate(process)
-                self.lock.acquire()
-                self.processes.append(process)
-                self.scheduler.add_process(process)
-                self.process_queue.put(process)
-                print(f"Process {process} loaded into queue.")
-            except Interrupt as e:
-                print(f"Error loading process to Cache: {e}")
-            finally:
-                self.lock.release()
+    def load_process_to_ram(self, process: Process):
+        print(f"Loading process {process} into RAM... Size: {len(process)}")
+        try:
+            self.ram.write(process)
+            self.processes.append(process)
+        except Interrupt as e:
+            print(f"Error loading process to RAM: {e}")
         else:
-            print("Not enough space in cache")
-        """
+            self.load_process(process)
+
     def load_process(self, process: Process):
-        print(f"Attempting to load process {process} from RAM to Cache...")
+        print(f"Attempting to load process {process} from RAM to Cache... Size: {len(process)}")
         lock_acquired = False
         try:
-            if self.cache.allocable(len(process)):
+            if self.cache.allocable(len(process.data)):
                 self.cache.allocate(process)
-                print(f"Process {process} allocated in cache.")
+                print(f"Process {process} allocated in cache. Cache status: {self.cache.blocks_free()} blocks free.")
                 self.lock.acquire()
                 lock_acquired = True
                 self.scheduler.add_process(process)
                 self.process_queue.put(process)
                 print(f"Process {process} added to queue.")
             else:
-                print("Not enough space in cache.")
+                print("Not enough space in cache. Cache status: {self.cache.blocks_free()} blocks free.")
         except Interrupt as e:
             print(f"Error loading process to Cache: {e}")
         finally:
             if lock_acquired:
                 self.lock.release()
+
     def context_switch(self, process: Process):
         print(f"Context switching to process {process}")
-        if self.current_process:#If current_process is a Process
-            self.save_state(self.current_process)#save its state
-        self.current_process = process#switch the current process to the input
-        self.restore_state(process)#update the CPU Register to pick up where the task left off.
+        if self.current_process:
+            self.save_state(self.current_process)
+        self.current_process = process
+        self.restore_state(process)
+
+    def save_state(self, process: Process):
+        # Save the state of the CPU registers to the process
+        process.save_state(self.cpu.registers)
+
+    def restore_state(self, process: Process):
+        # Restore the state of the CPU registers from the process
+        if process.registers:
+            self.cpu.registers = process.registers
 
     def execute_process(self, process: Process):
         self.timer.start(process)
@@ -159,16 +147,13 @@ class OperatingSystem:
         except Exception as e:
             print(f"Error during process execution: {e}")
         finally:
+            self.free_cache_blocks(process)  # Free cache blocks used by the process
             self.timer.stop(process)
             self.report_completion(process)
 
-    def save_state(self, process: Process):
-        # Save the state of the process
-        process.save_state(self.cpu.registers)
-
-    def restore_state(self, process: Process):
-        # Restore the state of the process
-        self.cpu.registers = process.restore_state()
+    def free_cache_blocks(self, process: Process):
+        for block_number in process.partitions:  # Assuming process tracks its cache partitions
+            self.cache.blocks[block_number].free()
 
     def report_completion(self, process: Process):
         wait_time = self.timer.get_wait_time(process)

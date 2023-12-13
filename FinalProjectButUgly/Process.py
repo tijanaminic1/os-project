@@ -1,7 +1,8 @@
-from typing import List, Any, Dict
+from typing import List
 from dataclasses import dataclass, field
 from Registry import Registry
 from Instruction import Instruction
+import copy
 @dataclass
 class Process:
     data: List[Instruction] = field(default_factory=list)
@@ -37,8 +38,8 @@ class Process:
         return iter(self.data)
     #Purpose: saves the given CPU state to the Process.
     #Essential for context switching.
-    def save_state(self, a_registry):
-        self.registers=a_registry
+    def save_state(self, registers):
+        self.saved_registers = copy.deepcopy(registers)
     #Purpose: Gets the estimated time remaining for a job.
     def remaining_time(self):
         return len(self) - self.registers["PC"]

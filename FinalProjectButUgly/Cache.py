@@ -54,11 +54,12 @@ class Cache(Memory):
     #ASSUMPTION: len(iterable) <= block_size
     def set_block(self, blocknum: int, iterable: Iterable):
         indices = range(*self.blockify(blocknum))
-        for index in indices:
+        a,b = self.blockify(blocknum)
+        for index in range(a,b):
             try:
-                self.data[index] = iterable[index-indices[0]]
+                self.data[index] = iterable[index-a]
             except IndexError:
-                print("indexerror")
+                print(f"indexerror: self.data[{index}] = iterable[{index-indices[0]}]")
     #allocable: int -> int or Interrupt
     #Purpose: Given a size of a set of instructions,
     #returns an Interrupt if the set of instructions is too
@@ -97,10 +98,9 @@ class Cache(Memory):
     def allocate(self,input:Process):
         if not self.allocable(len(input)):
             raise Interrupt("CacheBottleneck")
-        allocatehere = [block for block in range(self.block_size) if self.check(block)]
-        i = 0
-        for block in range(len(allocatehere)):
-            start,end = self.blockify(i) 
-            self.set_block(block,input[start:end])#Effect!: data[i]
-            block+=1#Effect! block is incremented
-        input.setPARTITIONS(allocatehere)
+        x = 0
+        for block in range(self.block_size):
+            if self.check(block):
+                for idx in range(*self.blockify(block)):
+                    self.data[idx] = input[x]
+                    x+=1

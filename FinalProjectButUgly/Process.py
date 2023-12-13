@@ -29,6 +29,9 @@ class Process:
     #dunder for making object [] usable
     def __getitem__(self,arg):
         return self.data[arg]
+    #dunder for making [] usable as set!
+    def __setitem__(self,idx,val):
+        self.data[idx]=val
     #dunder for making object iterable
     def __iter__(self):
         return iter(self.data)

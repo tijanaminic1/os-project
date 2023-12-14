@@ -49,3 +49,21 @@ class Cache(Memory):
 
         if instruction_index < len(input_process.data):
             raise Interrupt("CacheAllocationFailed")
+        
+    def get_instruction(self, process: Process) -> Instruction:
+        pc = process.current_instruction_address()  # Program counter value
+        total_instructions_processed = 0
+
+        for block_number in process.partitions:
+            block = self.blocks[block_number]
+            block_size = len(block.instructions)
+            if total_instructions_processed + block_size > pc:
+                instruction_index = pc - total_instructions_processed
+                instruction = block.instructions[instruction_index]
+                if instruction is not None:
+                    return instruction
+                else:
+                    raise Interrupt("InvalidInstructionAddress", message=f"Invalid address {pc} in process {process.id}.")
+            total_instructions_processed += block_size
+        
+        raise Interrupt("CacheMiss", message=f"Instruction not found for process {process.id} at PC {pc}.")

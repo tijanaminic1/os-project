@@ -8,6 +8,8 @@ from InstructionError import InstructionError
 #from RAM import RAM
 from Interrupt import Interrupt
 from typing import Any, List, Tuple
+from Cache import Cache
+from RAM import RAM
 """
 #from InterruptStack import InterruptStack
 @dataclass

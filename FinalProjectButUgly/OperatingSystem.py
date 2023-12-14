@@ -45,7 +45,8 @@ class OperatingSystem:
         print("Initializing system...")
         for program in self.inputs:
             for process in program.data:
-                self.load_process_to_ram(process)
+                if isinstance(process,Process):
+                    self.load_process_to_ram(process)
 
     def start(self):
         print("Starting OS...")

@@ -8,6 +8,7 @@ from InstructionError import InstructionError
 #from RAM import RAM
 from Interrupt import Interrupt
 from typing import Any, List, Tuple
+"""
 #from InterruptStack import InterruptStack
 @dataclass
 class CPU:
@@ -18,8 +19,21 @@ class CPU:
     def fetch(self, address: int, memory: Memory)-> Instruction:
         try:
             return self.decoder.fetch(memory, address)
-        except Interrupt("CacheMiss"):
+        except Exception as e:
+            match e:
+                case Interrupt():
+                    print("Interrupt!")
+                    raise e
+                case Exception():
+                    print("Exception!")
+                    raise e
             raise Interrupt ("CacheMiss",message=self.registers)
+    
+    def fetch(self, address: int, memory: Memory) -> Instruction:
+        try:
+            return memory[address]
+        except IndexError:
+            raise Interrupt("CacheMiss", message=self.registers)
     #decode: Instruction -> Tuple
     #purpose: Decodes an instruction into its mnemonic, 
     #effects, and locates its operands
@@ -92,3 +106,47 @@ class CPU:
     #run: -> Effect!
     #Purpose: Executes instructions arriving from
     #memory, then advances the program counter
+"""
+@dataclass
+class CPU:
+    registers: Registry
+    decoder: Decoder
+
+    def fetch(self, address: int, cache: Cache) -> Instruction:
+            try:
+                return cache.get_instruction(address)
+            except Exception as e:
+                match e:
+                    case Interrupt():
+                        print("Interrupt!")
+                        raise e
+                    case Exception():
+                        print("Exception!")
+                        raise e
+                raise Interrupt("CacheMiss", message=self.registers)
+
+    def execute(self, instruction: Tuple[str, Any, List]):
+        opcode, operation, operands = instruction
+        try:
+            if opcode in ["JMP", "JLE", "JE", "JGE", "JG", "JL", "JNE"]:
+                new_address = operation(*operands)
+                if new_address is not None:
+                    self.registers["PC"] = new_address - 1
+            else:
+                result = operation(*operands)
+                if isinstance(result, Interrupt):
+                    raise result
+                else:
+                    self.registers["SP"] = result
+        except Interrupt as interrupt:
+            raise interrupt
+        except Exception as e:
+            raise InstructionError(f"Error executing instruction: {e}")
+
+    def cycle(self, address: int, mem: Memory):
+        try:
+            instruction = self.fetch(address, mem)
+            decoded_instruction = self.decoder.decode(instruction)
+            self.execute(decoded_instruction)
+        except Interrupt as e:
+            raise e

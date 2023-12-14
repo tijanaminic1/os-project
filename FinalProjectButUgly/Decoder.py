@@ -4,6 +4,7 @@ from Instruction import Instruction
 from InstructionError import InstructionError
 import functools
 from typing import Tuple, Any
+"""
 class Decoder:
     #fetch: Memory + 
     def fetch(mem_loc: Memory, location: int) -> Instruction:
@@ -65,3 +66,67 @@ class Decoder:
             case _:
                 raise InstructionError
         return instructions
+"""
+class Decoder:
+    def fetch(mem_loc: Memory, location: int) -> Instruction:
+        try:
+            return mem_loc[location]
+        except IndexError:
+            raise Interrupt("CacheMiss")
+
+    def decode(inst: Instruction) -> Tuple[str, Any, list]:
+        opcode = inst.mnemonic()
+        operands = inst.operands()
+
+        def operation_for_opcode(opcode):
+            match opcode:
+                #some arithmetic
+                case "ADD":
+                    return lambda *args: sum(args)
+                case "SUB":
+                    return lambda *args: args[0] - sum(args[1:])
+                case "DIV":
+                    return lambda a, b: a / b
+                case "MUL":
+                    return lambda a, b: a * b
+                #boolean algebra
+                case "AND":
+                    return lambda a, b: a and b
+                case "OR":
+                    return lambda a, b: a or b
+                case "NOR":
+                    return lambda a, b: (not(a or b))
+                case "XOR":
+                    return lambda a, b: ((a and not b) or (not a and b))
+                case "NAND":
+                    return lambda a, b: (not(a and b))
+                #fun in the namespace
+                case "MOV": #like variable assignment
+                    return Interrupt(name="MOV interrupt", data=operands)
+                case "RET": #or carriage return
+                    return Interrupt(name="Process-controlled Termination", data=operands)
+                #Jumps
+                case "JMP":
+                    return lambda a: a
+                case "JLE":
+                    return lambda a, b: b if a <= 0 else None
+                case "JE":
+                    return lambda a, b: b if a == 0 else None
+                case "JGE":
+                    return lambda a, b: b if a >= 0 else None
+                case "JG":
+                    return lambda a, b: b if a > 0 else None
+                case "JL":
+                    return lambda a, b: b if a < 0 else None
+                case "JNE":
+                    return lambda a, b: b if a != 0 else None
+                case "PRINT":
+                    return Interrupt("PRINT", data=operands)
+                case "INPUT":
+                    return Interrupt("INPUT", data=operands)
+                case _:
+                    raise InstructionError(f"Unknown opcode: {opcode}")
+                #out of principle I shall not implement PUSH or POP, because a reasoned programmer should be able
+                #to think up a way to cleverly use instructions to achieve that ;)
+        operation = operation_for_opcode(opcode)
+        return opcode, operation, operands

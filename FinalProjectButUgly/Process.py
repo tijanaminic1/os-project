@@ -3,6 +3,10 @@ from dataclasses import dataclass, field
 from Registry import Registry
 from Instruction import Instruction
 import copy
+def generate_process_id():
+    generate_process_id.counter += 1
+    return generate_process_id.counter
+generate_process_id.counter = 0  # Initializing the counter
 @dataclass
 class Process:
     data: List[Instruction] = field(default_factory=list)
@@ -10,6 +14,13 @@ class Process:
     end = 0 
     partitions: List[int] = field(default_factory=list)#List of partitions the created process occupies. determined later.
     parent = None
+    id: int = field(default_factory=generate_process_id)  # Unique ID for each process
+    _id_counter = 0  # Class-level attribute to generate unique IDs
+
+    @staticmethod
+    def generate_id():
+        Process._id_counter += 1
+        return Process._id_counter - 1
     def __post_init__(self):
         self.end = sum(len(i) for i in self.data)
     #Purpose: self.data getter

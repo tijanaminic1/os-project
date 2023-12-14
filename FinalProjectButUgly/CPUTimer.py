@@ -2,6 +2,7 @@ from time import time
 from dataclasses import dataclass, field
 from typing import Dict
 from Process import Process
+import time
 @dataclass
 class ProcessTimeMetrics:
     arrival_time: float
@@ -12,16 +13,22 @@ class ProcessTimeMetrics:
 class CPUTimer:
     def __init__(self):
         self.metrics: Dict[int, ProcessTimeMetrics] = {}
-
+    """
     def add_process(self, process: Process):
         self.metrics[process.id] = ProcessTimeMetrics(arrival_time=time())
-
     def start(self, process: Process):
         if self.metrics[process.id].start_time == 0:
             self.metrics[process.id].start_time = time()
+    """
+    def start(self, process: Process):
+        if process.id not in self.metrics:
+            self.add_process(process.id)
+    def add_process(self, process_id):
+        if process_id not in self.metrics:
+            self.metrics[process_id] = ProcessTimeMetrics(arrival_time=time.time())
 
     def stop(self, process: Process):
-        current_time = time()
+        current_time = time.time()
         metrics = self.metrics[process.id]
         if metrics.start_time != 0:
             metrics.total_run_time += current_time - metrics.start_time

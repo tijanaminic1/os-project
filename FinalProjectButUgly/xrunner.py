@@ -33,34 +33,34 @@ program = Program([process1, process2, process3])
 
 #Stress program and processes
 stresspress = Process(data=[Instruction("ADD",1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,14,14,15),Instruction("MUL",20),Instruction("DIV",5)])
-stressgram = Program([copy.deepcopy(stresspress) for x in range(4)]) #large program
+program2 = Program([copy.deepcopy(stresspress) for x in range(4)]) #TODO !!!!!range(1-10)!!!!!
 # Define a program with multiple processes
-program1 = copy.deepcopy(program)
-program2 = copy.deepcopy(program)
-program3 = copy.deepcopy(program)
-program4 = copy.deepcopy(program)
-program5 = copy.deepcopy(program)
 
 
 cache_mem = Cache(data=None)
 if __name__ == "__main__":
-    test_this = "fcfs"#change this to run other tests of scheduling
+    test_this = "fcfs"#TODO: RUn each simulation on 1, 2, 5, 10
     match test_this:
         case "fcfs":
-            os_fcfs = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=fcfs_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program1)])
+            os_fcfs = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=fcfs_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program2)])
             os_fcfs.start()
+            os_fcfs.end_simulation()  # This will print the CPU utilization
         case "rr":
             os_rr = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=rr_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program2)])
             os_rr.start()
+            os_rr.end_simulation()
         case "sjf":
-            os_sjf = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=sjf_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program3)])
+            os_sjf = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=sjf_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program2)])
             os_sjf.start()
+            os_sjf.end_simulation()
         case "hrn":
-            os_hrn = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=hrn_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program4)])
+            os_hrn = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=hrn_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program2)])
             os_hrn.start()
+            os_hrn.end_simulation()
         case _:
-            os_str = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=str_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program5)])
+            os_str = OS(cpu=CPU(registers=Registry(),decoder=Decoder()), ram=RAM(), cache=copy.deepcopy(cache_mem), scheduler=str_scheduler, interrupt_stack=InterruptStack(), dma=DMA(), inputs=[copy.deepcopy(program2)])
             os_str.start()
+            os_str.end_simulation()
 
             
         

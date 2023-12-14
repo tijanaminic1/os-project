@@ -26,6 +26,7 @@ import traceback
 import time
 class OperatingSystem:
     def __init__(self, cpu, ram, cache, scheduler, interrupt_stack, dma, processes=None, inputs=None):
+        self.process_id_counter = 0
         self.cpu = cpu
         self.ram = ram
         self.cache = cache
@@ -45,24 +46,25 @@ class OperatingSystem:
         print("Initializing system...")
         for program in self.inputs:
             for process in program.data:
-                if isinstance(process,Process):
+                if isinstance(process, Process):
+                    process.id = self._generate_process_id()  # Assign unique ID
                     self.load_process_to_ram(process)
 
-    def start(self):
-        print("Starting OS...")
-        self.thread.start()
-        print("OS thread started.")
-        # Keep the main thread alive for debugging
-        import time
-        time.sleep(30)#This is just to force the main thread to stay alive to get juicy outputs.
+    def _generate_process_id(self):
+        self.process_id_counter += 1
+        return self.process_id_counter
+
+    # Add a method to end the simulation and print CPU utilization
+    def end_simulation(self):
+        cpu_utilization = self.timer.get_cpu_utilization()
+        print(f"CPU Utilization: {cpu_utilization}%")
 
     def start(self):
         print("Starting OS...")
         self.thread.start()
         print("OS thread started.")
         # Keep the main thread alive for debugging
-        import time
-        time.sleep(30)
+        time.sleep(0.006666)#need to sleep otherwise utilization is calculated weird.
 
     def run(self):
         print("OS running...")
@@ -83,7 +85,7 @@ class OperatingSystem:
                 self.lock.release()
             time.sleep(1)
     def load_process_to_ram(self, process: Process):
-        print(f"Loading process {process} into RAM... Size: {len(process)}")
+        print(f"Loading process ID {process.id} into RAM... Size: {len(process)}")
         try:
             self.ram.write(process)
             self.processes.append(process)
@@ -128,64 +130,39 @@ class OperatingSystem:
         # Restore the state of the CPU registers from the process
         if process.registers:
             self.cpu.registers = process.registers
-    """
     def execute_process(self, process: Process):
-        self.timer.start(process)
+        self.timer.start(process.id)  # Start timer using process ID
         try:
             while not process.execution_completed():
-                address = process.current_instruction_address()
-                self.cpu.cycle(address, self.cache)
-        except Interrupt as e:
-            self.interrupt_stack.push(e)
-            self.HANDLE_INTERRUPT_STACK()
-        except Exception as e:
-            print(f"Error during process execution: {e}")
-        finally:
-            self.free_cache_blocks(process)  # Free cache blocks used by the process
-            self.timer.stop(process)
-            self.report_completion(process)
-    """
-    def execute_process(self, process: Process):
-        self.timer.start(process)
-        try:
-            while not process.execution_completed():
-                address = process.current_instruction_address()
-                instruction = self.cpu.fetch(address, self.cache)  # Fetch instruction
+                instruction = self.cpu.fetch(process, self.cache)  # Fetch instruction
                 decoded = self.cpu.decode(instruction)  # Decode instruction
                 self.cpu.execute(decoded)  # Execute instruction
-                # Handle any interrupts that may have occurred
-                # ...
-
         except Interrupt as interrupt:
             self.interrupt_stack.push(interrupt)
-            self.HANDLE_INTERRUPT_STACK()
+            self.HANDLENESTED(process, interrupt)
         finally:
-            self.timer.stop(process)
+            self.timer.stop(process.id)  # Stop timer using process ID
             self.report_completion(process)
+
 
     def free_cache_blocks(self, process: Process):
         for block_number in process.partitions:  # Assuming process tracks its cache partitions
             self.cache.blocks[block_number].free()
-    """
-    def report_completion(self, process: Process):
-        wait_time = self.timer.get_wait_time(process)
-        turnaround_time = self.timer.get_turnaround_time(process)
-        arrival_time = process.arrival_time
-        print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
-    """
-    """
-    def report_completion(self, process: Process):
-        wait_time = self.timer.get_wait_time(process)
-        turnaround_time = self.timer.get_turnaround_time(process)
-        arrival_time = self.timer.metrics[process.id].arrival_time  # Use arrival time from CPUTimer
-        print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
-    """
-    def report_completion(self, process: Process):
-        wait_time = self.timer.get_wait_time(process)
-        turnaround_time = self.timer.get_turnaround_time(process)
-        arrival_time = self.timer.metrics[process.id].arrival_time  # Use arrival time from CPUTimer
-        print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
 
+    def report_completion(self, process: Process):
+        process_id = process.id
+        wait_time = self.timer.get_wait_time(process_id)
+        turnaround_time = self.timer.get_turnaround_time(process_id)
+        arrival_time = self.timer.metrics[process_id].arrival_time
+        print(f"Process {process_id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
+
+    """
+    def report_completion(self, process: Process):
+        wait_time = self.timer.get_wait_time(process)
+        turnaround_time = self.timer.get_turnaround_time(process)
+        arrival_time = self.timer.metrics[process.id].arrival_time  # Use arrival time from CPUTimer
+        print(f"Process {process.id}: Wait Time={wait_time}, Turnaround Time={turnaround_time}, Arrival Time={arrival_time}")
+    """
     #HANDLE: Interrupt -> Effect!
     #Purpose: When an interrupt is signalled,
     #the HANDLE(Interrupt) function defines an
@@ -196,11 +173,11 @@ class OperatingSystem:
                 print(interrupt.MESSAGE())
             case Interrupt(name="INPUT"):
                 input(interrupt.MESSAGE())
-            case Interrupt(name="DMAIndexOutOfBounds"): #This is also a type of Page Fault
+            case Interrupt(name="DMAIndexOutOfBounds"):
                 print("DMA failed! Entry does not exist.")
-            case Interrupt(name="ProcessTooLarge"):#TODO: Generally a fatal error, unless we do VRAM.
+            case Interrupt(name="ProcessTooLarge"):
                 print("Process too large to fit in the cache!")
-            case Interrupt(name="CacheBottleneck"):#TODO: Integrate this with scheduling algorithm. It is a scheduling issue.
+            case Interrupt(name="CacheBottleneck"):
                 print("Not enough space to fit"f" {interrupt.MESSAGE()} right now.")
             case Interrupt(name="CacheMiss"):
                 try:
@@ -221,18 +198,34 @@ class OperatingSystem:
                 print("RAM capacity warning")
             case Interrupt(name="SegmentationFault"):
                 print("Segmentation Fault")
+            case _:
+                pass
 
 
-    @staticmethod
-    def HANDLEHELPER(interruptstack: InterruptStack):
+    #HANDLENESTED: Process, Interrupt, int -> Effect!
+    # Purpose: Uses recursion to handle nested interrupts.
+    # This is because Recursion is expensive in Python, and this expense leads to a great
+    # way to simulate that excessive interruptions are bad.    
+    def HANDLENESTED(self, process: Process, interrupt: Interrupt, depth: int = 0):
+        match depth:
+            case 0:
+                print(f"[IF] check code {depth}: Normal.")
+            case 1:
+                print(f"[IF] check code {depth}. Handling interrupt.")
+            case 2:
+                print(f"[IF] check code {depth}. Nested interrupts.")
+            case _:
+                print(f"[IF Fatal] terminating process {process.id} due to unresolvable nested interrupts.")
+                return
         try:
-            interrupt = interruptstack.pop()
-            OperatingSystem.HANDLE(interrupt)
+            self.HANDLE(interrupt)
+        except Interrupt as nested_interrupt:
+            self.HANDLENESTED(process, nested_interrupt, depth + 1)
         except Exception as e:
-            print(f"Error handling helper: {e}")
-    def HANDLE_INTERRUPT_STACK(self):
-        while len(self.interrupt_stack)>0:
-            OperatingSystem.HANDLEHELPER()
+            print(f"Unhandled exception in interrupt handling: {e}")
+            # Optionally, handle the exception or terminate the process
+
+
     def debug_print_queue(self):
         with self.lock:
             queue_contents = list(self.process_queue.queue)

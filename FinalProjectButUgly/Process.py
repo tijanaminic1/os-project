@@ -2,6 +2,7 @@ from typing import List
 from dataclasses import dataclass, field
 from Registry import Registry
 from Instruction import Instruction
+from typing import Optional
 import copy
 def generate_process_id():
     generate_process_id.counter += 1
@@ -14,7 +15,7 @@ class Process:
     end = 0 
     partitions: List[int] = field(default_factory=list)#List of partitions the created process occupies. determined later.
     parent = None
-    id: int = field(default_factory=generate_process_id)  # Unique ID for each process
+    id: Optional[int] = None  # Unique ID for each process
     _id_counter = 0  # Class-level attribute to generate unique IDs
 
     @staticmethod
